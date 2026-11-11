@@ -13,7 +13,11 @@ import {
   VoiceTranscriptEntry,
 } from './types';
 
-const INACTIVITY_AUTO_PAUSE_MS = 5 * 60 * 1000;
+export const INACTIVITY_AUTO_END_MS = 2 * 60 * 1000;
+const AUTO_END_FALLBACK_MS = 7000;
+const AUTO_END_POST_PLAYBACK_MS = 220;
+const AUTO_END_SILENT_GRACE_MS = 1800;
+const MAX_TEXT_MESSAGE_CHARS = 500;
 const MAX_RECONNECT_ATTEMPTS = 3;
 
 export interface UseVoiceDraftSessionOptions {
@@ -83,7 +87,11 @@ export function useVoiceDraftSession({
   const manualStopRef = useRef(false);
   const reconnectingRef = useRef(false);
   const reconnectAttemptsRef = useRef(0);
+  const isPlayingRef = useRef(false);
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingAutoEndRef = useRef<{ reason: string; turnFinished: boolean } | null>(null);
+  const autoEndGraceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoEndFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const appendSystemOrAction = useCallback((speaker: 'action' | 'system', text: string) => {
     setTranscripts((prev) => [
@@ -132,30 +140,25 @@ export function useVoiceDraftSession({
     );
   }, []);
 
-  const resetInactivityTimer = useCallback(() => {
-    if (inactivityTimerRef.current) {
-      clearTimeout(inactivityTimerRef.current);
-    }
-    inactivityTimerRef.current = setTimeout(() => {
-      if (sessionRef.current && audioRef.current) {
-        audioRef.current.setMuted(true);
-        setIsMuted(true);
-        setConnectionState('paused');
-        try {
-          sessionRef.current.sendRealtimeInput({ audioStreamEnd: true });
-        } catch {
-          // ignore if closed
-        }
-        appendSystemOrAction('system', 'Mic auto-paused after 5 minutes of inactivity.');
-      }
-    }, INACTIVITY_AUTO_PAUSE_MS);
-  }, [appendSystemOrAction]);
-
-  const teardownHardwareAndSocket = useCallback(async () => {
+  const clearAllSessionTimers = useCallback(() => {
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
       inactivityTimerRef.current = null;
     }
+    if (autoEndGraceTimerRef.current) {
+      clearTimeout(autoEndGraceTimerRef.current);
+      autoEndGraceTimerRef.current = null;
+    }
+    if (autoEndFallbackTimerRef.current) {
+      clearTimeout(autoEndFallbackTimerRef.current);
+      autoEndFallbackTimerRef.current = null;
+    }
+  }, []);
+
+  const teardownHardwareAndSocket = useCallback(async () => {
+    clearAllSessionTimers();
+    pendingAutoEndRef.current = null;
+    isPlayingRef.current = false;
 
     const activeSession = sessionRef.current;
     sessionRef.current = null;
@@ -175,7 +178,87 @@ export function useVoiceDraftSession({
 
     setInputRms(0);
     setIsAssistantSpeaking(false);
-  }, []);
+  }, [clearAllSessionTimers]);
+
+  const endSessionWithReason = useCallback(
+    async (systemNotice?: string) => {
+      manualStopRef.current = true;
+      resumeHandleRef.current = null;
+      activeTokenRef.current = null;
+      try {
+        sessionRef.current?.sendRealtimeInput({ audioStreamEnd: true });
+      } catch {
+        // ignore if socket already closed
+      }
+      await teardownHardwareAndSocket();
+      finalizeOpenTranscripts();
+      setIsMuted(false);
+      setConnectionState('idle');
+      if (systemNotice) {
+        appendSystemOrAction('system', systemNotice);
+      }
+    },
+    [appendSystemOrAction, finalizeOpenTranscripts, teardownHardwareAndSocket]
+  );
+
+  const scheduleGracefulAutoEnd = useCallback(
+    (delayMs: number) => {
+      if (autoEndGraceTimerRef.current) {
+        clearTimeout(autoEndGraceTimerRef.current);
+      }
+      autoEndGraceTimerRef.current = setTimeout(() => {
+        const pending = pendingAutoEndRef.current;
+        if (!pending) return;
+        const notice =
+          pending.reason === 'off_topic_refusal'
+            ? 'Voice session ended due to off-topic requests.'
+            : 'Voice session ended.';
+        void endSessionWithReason(notice);
+      }, delayMs);
+    },
+    [endSessionWithReason]
+  );
+
+  const requestAutoEndSession = useCallback(
+    (reason: string) => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+      pendingAutoEndRef.current = { reason, turnFinished: false };
+
+      // Mute mic capture immediately so ambient noise does not interrupt the goodbye remark
+      if (audioRef.current) {
+        audioRef.current.setMuted(true);
+        setIsMuted(true);
+      }
+
+      if (autoEndFallbackTimerRef.current) {
+        clearTimeout(autoEndFallbackTimerRef.current);
+      }
+      autoEndFallbackTimerRef.current = setTimeout(() => {
+        if (!pendingAutoEndRef.current) return;
+        const notice =
+          reason === 'off_topic_refusal'
+            ? 'Voice session ended due to off-topic requests.'
+            : 'Voice session ended.';
+        void endSessionWithReason(notice);
+      }, AUTO_END_FALLBACK_MS);
+    },
+    [endSessionWithReason]
+  );
+
+  const resetInactivityTimer = useCallback(() => {
+    if (pendingAutoEndRef.current) return;
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+    inactivityTimerRef.current = setTimeout(() => {
+      if (sessionRef.current || audioRef.current) {
+        void endSessionWithReason('Voice session ended after 2 minutes of inactivity.');
+      }
+    }, INACTIVITY_AUTO_END_MS);
+  }, [endSessionWithReason]);
 
   const fetchToken = useCallback(async (): Promise<{ token: string; model: string; expireAtMs: number }> => {
     const res = await fetch('/api/voice/session', {
@@ -266,6 +349,7 @@ export function useVoiceDraftSession({
               clientsDirectoryRef: clientsRef,
               actions: actionsRef.current,
               onActionLog: (actionText) => appendSystemOrAction('action', actionText),
+              onRequestEndSession: requestAutoEndSession,
             });
             functionResponses.push(response);
           }
@@ -284,6 +368,11 @@ export function useVoiceDraftSession({
         }
 
         if (content.modelTurn?.parts) {
+          const hasAudioChunk = content.modelTurn.parts.some((p) => Boolean(p.inlineData?.data));
+          if (hasAudioChunk && autoEndGraceTimerRef.current) {
+            clearTimeout(autoEndGraceTimerRef.current);
+            autoEndGraceTimerRef.current = null;
+          }
           for (const part of content.modelTurn.parts) {
             if (part.inlineData?.data) {
               audioRef.current?.enqueuePlayback(part.inlineData.data);
@@ -302,11 +391,20 @@ export function useVoiceDraftSession({
         }
 
         if (content.outputTranscription?.text) {
+          resetInactivityTimer();
           upsertStreamingTranscript('assistant', content.outputTranscription.text, 'append', false);
         }
 
         if (content.turnComplete || content.generationComplete) {
           finalizeOpenTranscripts();
+          resetInactivityTimer();
+        }
+
+        if (content.turnComplete && pendingAutoEndRef.current) {
+          pendingAutoEndRef.current.turnFinished = true;
+          if (!isPlayingRef.current) {
+            scheduleGracefulAutoEnd(AUTO_END_SILENT_GRACE_MS);
+          }
         }
       };
 
@@ -358,7 +456,15 @@ export function useVoiceDraftSession({
 
       sessionRef.current = session;
     },
-    [appendSystemOrAction, fetchToken, finalizeOpenTranscripts, resetInactivityTimer, upsertStreamingTranscript]
+    [
+      appendSystemOrAction,
+      fetchToken,
+      finalizeOpenTranscripts,
+      requestAutoEndSession,
+      resetInactivityTimer,
+      scheduleGracefulAutoEnd,
+      upsertStreamingTranscript,
+    ]
   );
 
   const startSession = useCallback(async () => {
@@ -393,7 +499,11 @@ export function useVoiceDraftSession({
           }
         },
         onPlaybackChange: (playing) => {
+          isPlayingRef.current = playing;
           setIsAssistantSpeaking(playing);
+          if (!playing && pendingAutoEndRef.current?.turnFinished) {
+            scheduleGracefulAutoEnd(AUTO_END_POST_PLAYBACK_MS);
+          }
         },
       });
 
@@ -413,25 +523,21 @@ export function useVoiceDraftSession({
       setErrorMessage(err?.message || 'Unable to start voice session');
       setConnectionState('error');
     }
-  }, [appendSystemOrAction, connectWebSocket, connectionState, resetInactivityTimer, teardownHardwareAndSocket]);
+  }, [
+    appendSystemOrAction,
+    connectWebSocket,
+    connectionState,
+    resetInactivityTimer,
+    scheduleGracefulAutoEnd,
+    teardownHardwareAndSocket,
+  ]);
 
   const stopSession = useCallback(async () => {
-    manualStopRef.current = true;
-    resumeHandleRef.current = null;
-    activeTokenRef.current = null;
-    try {
-      sessionRef.current?.sendRealtimeInput({ audioStreamEnd: true });
-    } catch {
-      // ignore
-    }
-    await teardownHardwareAndSocket();
-    finalizeOpenTranscripts();
-    setIsMuted(false);
-    setConnectionState('idle');
-  }, [finalizeOpenTranscripts, teardownHardwareAndSocket]);
+    await endSessionWithReason();
+  }, [endSessionWithReason]);
 
   const toggleMute = useCallback(() => {
-    if (!audioRef.current || !sessionRef.current) return;
+    if (!audioRef.current || !sessionRef.current || pendingAutoEndRef.current) return;
     const nextMuted = !isMuted;
     audioRef.current.setMuted(nextMuted);
     setIsMuted(nextMuted);
@@ -451,10 +557,10 @@ export function useVoiceDraftSession({
 
   const sendTextMessage = useCallback(
     async (rawText: string) => {
-      const trimmed = rawText.trim();
+      const trimmed = rawText.trim().slice(0, MAX_TEXT_MESSAGE_CHARS);
       if (!trimmed) return;
 
-      if (!sessionRef.current) {
+      if (!sessionRef.current || pendingAutoEndRef.current) {
         appendSystemOrAction('system', 'Start Voice Copilot first before sending live instructions.');
         return;
       }

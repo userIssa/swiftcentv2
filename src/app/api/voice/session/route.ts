@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
     const nowMs = Date.now();
     const newSessionExpireTime = new Date(nowMs + 2 * 60 * 1000).toISOString();
-    const expireTime = new Date(nowMs + 20 * 60 * 1000).toISOString();
+    const expireTime = new Date(nowMs + 10 * 60 * 1000).toISOString();
 
     const authToken = await serverAi.authTokens.create({
       config: {
@@ -81,6 +81,8 @@ export async function POST(request: Request) {
           model: GEMINI_LIVE_MODEL,
           config: {
             responseModalities: [Modality.AUDIO],
+            temperature: 0.2,
+            maxOutputTokens: 350,
             speechConfig: {
               voiceConfig: {
                 prebuiltVoiceConfig: {
@@ -93,9 +95,9 @@ export async function POST(request: Request) {
             },
             tools: VOICE_DRAFT_TOOLS,
             contextWindowCompression: {
-              triggerTokens: '25000',
+              triggerTokens: '12000',
               slidingWindow: {
-                targetTokens: '8000',
+                targetTokens: '4000',
               },
             },
             inputAudioTranscription: {},

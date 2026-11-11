@@ -112,6 +112,16 @@ export function VoiceDraftCopilot({
     return dialogue[dialogue.length - 1] || null;
   }, [transcripts]);
 
+  const latestEndedNotice = useMemo(() => {
+    if (isLive) return null;
+    for (let i = transcripts.length - 1; i >= 0; i -= 1) {
+      if (transcripts[i].speaker === 'system' && transcripts[i].text.includes('ended')) {
+        return transcripts[i].text;
+      }
+    }
+    return null;
+  }, [isLive, transcripts]);
+
   const statusHeadline =
     connectionState === 'initializing'
       ? 'Connecting...'
@@ -372,6 +382,12 @@ export function VoiceDraftCopilot({
                   : `Speak naturally to build your ${docLabel.toLowerCase()} — client, items, discounts, and terms.`}
               </p>
 
+              {latestEndedNotice && (
+                <div className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-white/65 border border-slate-200/80 text-[11px] font-medium text-slate-600">
+                  {latestEndedNotice}
+                </div>
+              )}
+
               {recentActions.length > 0 && (
                 <div className="space-y-1.5">
                   {recentActions.map((act) => (
@@ -479,6 +495,7 @@ export function VoiceDraftCopilot({
                 type="text"
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
+                maxLength={500}
                 disabled={!isLive}
                 placeholder={
                   isLive

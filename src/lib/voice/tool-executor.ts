@@ -20,6 +20,7 @@ export interface ToolExecutionContext {
   clientsDirectoryRef: { current: Array<{ _id: string; name: string; email?: string }> };
   actions: VoiceDraftActions;
   onActionLog: (text: string) => void;
+  onRequestEndSession?: (reason: string) => void;
 }
 
 async function resolveFromWorkspace(
@@ -638,6 +639,24 @@ export async function executeVoiceToolCall(
           scheduling: FunctionResponseScheduling.WHEN_IDLE,
         };
         break;
+      case 'end_voice_session': {
+        const reason =
+          typeof args.reason === 'string' && args.reason.trim()
+            ? args.reason.trim()
+            : 'user_requested_exit';
+        ctx.onActionLog('Ending voice session');
+        ctx.onRequestEndSession?.(reason);
+        result = {
+          output: {
+            ending: true,
+            reason,
+            message:
+              'Voice session is closing immediately after your final remark. Say one short goodbye sentence without asking any follow-up questions.',
+          },
+          scheduling: FunctionResponseScheduling.WHEN_IDLE,
+        };
+        break;
+      }
       default:
         result = {
           output: { error: `Unknown function "${fc.name}"` },

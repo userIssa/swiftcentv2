@@ -14,6 +14,7 @@ import {
 } from '../src/lib/voice/tool-declarations';
 import { executeVoiceToolCall } from '../src/lib/voice/tool-executor';
 import { computeVoiceDockGeometry } from '../src/lib/voice/dock-layout';
+import { INACTIVITY_AUTO_END_MS } from '../src/lib/voice/useVoiceDraftSession';
 import { VoiceDocumentDraft, VoiceDraftActions, VoiceFormLineItem } from '../src/lib/voice/types';
 
 test('scoreTextMatch and rankCatalogMatches resolve fuzzy client and catalog queries', () => {
@@ -121,6 +122,9 @@ test('VOICE_DRAFT_FUNCTION_DECLARATIONS enforce NON_BLOCKING async behavior and 
   assert.match(prompt, /EUR/);
   assert.match(prompt, /2026-11-11/);
   assert.match(prompt, /get_draft_summary/);
+  assert.match(prompt, /STRICT REFUSAL/i);
+  assert.match(prompt, /end_voice_session/);
+  assert.ok(VOICE_DRAFT_FUNCTION_DECLARATIONS.some((d) => d.name === 'end_voice_session'));
 });
 
 test('executeVoiceToolCall updates draft synchronously across multi-item batch calls', async () => {
@@ -382,5 +386,55 @@ test('computeVoiceDockGeometry adapts panel width and preserves workspace space 
   // Large desktop (1920px): expands cleanly up to 520px while preserving ample workspace
   const desktopMax = computeVoiceDockGeometry(1920, 'maximized');
   assert.equal(desktopMax.panelWidthPx, 520);
+});
+
+test('executeVoiceToolCall end_voice_session schedules session end and inactivity timeout is 2 minutes', async () => {
+  assert.equal(INACTIVITY_AUTO_END_MS, 2 * 60 * 1000);
+
+  let requestedReason: string | null = null;
+  const logs: string[] = [];
+  const draftRef: { current: VoiceDocumentDraft } = {
+    current: {
+      documentType: 'quote',
+      organizationId: 'org1',
+      selectedClientId: '',
+      currency: 'USD',
+      issueDate: '2026-11-11',
+      dueOrValidDate: '2026-12-11',
+      notes: '',
+      terms: '',
+      items: [],
+    },
+  };
+
+  const resp = await executeVoiceToolCall(
+    {
+      id: 'call_end_1',
+      name: 'end_voice_session',
+      args: { reason: 'user_requested_exit' },
+    },
+    {
+      draftRef,
+      clientsDirectoryRef: { current: [] },
+      actions: {
+        setClientById: () => {},
+        setCurrency: () => {},
+        setIssueDate: () => {},
+        setDueOrValidDate: () => {},
+        setNotes: () => {},
+        setTerms: () => {},
+        setItems: () => {},
+      },
+      onActionLog: (msg) => logs.push(msg),
+      onRequestEndSession: (reason) => {
+        requestedReason = reason;
+      },
+    }
+  );
+
+  assert.equal(requestedReason, 'user_requested_exit');
+  assert.equal((resp.response as any).ending, true);
+  assert.equal(resp.scheduling, FunctionResponseScheduling.WHEN_IDLE);
+  assert.ok(logs.includes('Ending voice session'));
 });
 

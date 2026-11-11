@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Next.js build outputs
+.next/
+out/
+tsconfig.tsbuildinfo
+
+# Hosting & local environment secrets
+.vercel
+.netlify
+.env
+.env.local
+.env.*.local
+
+# OS & Logs
+.DS_Store
+*.log
+

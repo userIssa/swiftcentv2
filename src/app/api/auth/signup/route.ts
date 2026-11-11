@@ -6,7 +6,6 @@ import { hashPassword, createSessionToken, serializeSessionUser } from '@/lib/au
 
 export async function POST(request: Request) {
   try {
-    await connectToDatabase();
     const body = await request.json();
     const { name, email, password, businessName } = body;
 
@@ -17,6 +16,8 @@ export async function POST(request: Request) {
     if (password.length < 6) {
       return NextResponse.json({ success: false, error: 'Password must be at least 6 characters' }, { status: 400 });
     }
+
+    await connectToDatabase();
 
     const normalizedEmail = email.toLowerCase().trim();
     const existing = await User.findOne({ email: normalizedEmail });

@@ -5,13 +5,14 @@ import { verifyPassword, createSessionToken, serializeSessionUser } from '@/lib/
 
 export async function POST(request: Request) {
   try {
-    await connectToDatabase();
     const body = await request.json();
     const { email, password } = body;
 
     if (!email || !password) {
       return NextResponse.json({ success: false, error: 'Email and password are required' }, { status: 400 });
     }
+
+    await connectToDatabase();
 
     const normalizedEmail = email.toLowerCase().trim();
     const user = await User.findOne({ email: normalizedEmail });

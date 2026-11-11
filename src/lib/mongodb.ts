@@ -1,6 +1,19 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/swiftcent';
+const DEFAULT_LOCAL_MONGODB_URI = 'mongodb://127.0.0.1:27017/swiftcent';
+
+export function resolveMongoUri(): string {
+  const configured = process.env.MONGODB_URI?.trim();
+  if (configured) return configured;
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'MONGODB_URI environment variable is not set in production. Configure it in your hosting environment settings.'
+    );
+  }
+
+  return DEFAULT_LOCAL_MONGODB_URI;
+}
 
 interface MongooseCache {
   conn: typeof mongoose | null;
@@ -24,8 +37,14 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
   }
 
   if (!cached!.promise) {
-    cached!.promise = mongoose.connect(MONGODB_URI, {
+    const uri = resolveMongoUri();
+    cached!.promise = mongoose.connect(uri, {
       bufferCommands: false,
+      // Fail before serverless gateways (e.g. Netlify 10s-26s) time out with HTML 504 errors
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+      socketTimeoutMS: 15000,
+      maxPoolSize: 10,
     }).then((mongooseInstance) => {
       return mongooseInstance;
     });

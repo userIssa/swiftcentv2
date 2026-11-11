@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     });
 
     const nowMs = Date.now();
-    const newSessionExpireTime = new Date(nowMs + 2 * 60 * 1000).toISOString();
+    const newSessionExpireTime = new Date(nowMs + 3 * 60 * 1000).toISOString();
     const expireTime = new Date(nowMs + 10 * 60 * 1000).toISOString();
 
     const authToken = await serverAi.authTokens.create({

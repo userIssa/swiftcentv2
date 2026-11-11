@@ -57,6 +57,15 @@ export interface IInvoice extends Document {
       logoUrl?: string;
       primaryColor?: string;
     };
+    wireInstructions?: {
+      bankRegion?: string;
+      bankName?: string;
+      accountName?: string;
+      accountNumber?: string;
+      routingNumber?: string;
+      swiftCode?: string;
+      instructions?: string;
+    };
   };
 
   clientSnapshot: {
@@ -158,6 +167,15 @@ const InvoiceSchema = new Schema<IInvoice>(
       branding: {
         logoUrl: String,
         primaryColor: String,
+      },
+      wireInstructions: {
+        bankRegion: String,
+        bankName: String,
+        accountName: String,
+        accountNumber: String,
+        routingNumber: String,
+        swiftCode: String,
+        instructions: String,
       },
     },
 

@@ -13,6 +13,7 @@ import {
 import { StatusBadge } from '@/components/StatusBadge';
 import { QuoteStatusBadge } from '@/components/QuoteStatusBadge';
 import { formatCurrency } from '@/engine/calculator';
+import { getWireDisplayLabels } from '@/lib/banking-regions';
 import { InvoiceStatus } from '@/engine/state-machine';
 
 export type TemplateTheme = 'modern' | 'corporate' | 'creative';
@@ -504,6 +505,11 @@ function LineItemsTable({ doc, currency, color }: any) {
 }
 
 function TotalsAndTerms({ doc, currency, isInvoice, color }: any) {
+  const wire =
+    doc.organizationSnapshot?.wireInstructions || (doc.organizationId as any)?.wireInstructions;
+  const hasBankDetails = Boolean(wire?.bankName || wire?.accountNumber || wire?.swiftCode);
+  const wireLabels = getWireDisplayLabels(wire, currency);
+
   return (
     <div className="space-y-6 pt-4 border-t border-slate-200">
       <div className="flex flex-col sm:flex-row justify-between items-start gap-8">
@@ -521,6 +527,50 @@ function TotalsAndTerms({ doc, currency, isInvoice, color }: any) {
                 Terms & Conditions
               </div>
               <p className="whitespace-pre-line leading-relaxed">{doc.terms}</p>
+            </div>
+          )}
+          {isInvoice && hasBankDetails && (
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2 text-[11px]">
+              <div className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                Bank Transfer Settlement Details
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-slate-600">
+                {wire.bankName && (
+                  <div>
+                    <span className="text-slate-400">Bank: </span>
+                    <span className="font-semibold text-slate-800">{wire.bankName}</span>
+                  </div>
+                )}
+                {wire.accountName && (
+                  <div>
+                    <span className="text-slate-400">Beneficiary: </span>
+                    <span className="font-semibold text-slate-800">{wire.accountName}</span>
+                  </div>
+                )}
+                {wire.accountNumber && (
+                  <div>
+                    <span className="text-slate-400">{wireLabels.accountShortLabel}: </span>
+                    <span className="font-mono font-semibold text-slate-800">{wire.accountNumber}</span>
+                  </div>
+                )}
+                {wire.routingNumber && (
+                  <div>
+                    <span className="text-slate-400">{wireLabels.routingShortLabel}: </span>
+                    <span className="font-mono font-semibold text-slate-800">{wire.routingNumber}</span>
+                  </div>
+                )}
+                {wire.swiftCode && (
+                  <div>
+                    <span className="text-slate-400">SWIFT / BIC: </span>
+                    <span className="font-mono font-semibold text-slate-800">{wire.swiftCode}</span>
+                  </div>
+                )}
+              </div>
+              {wire.instructions && (
+                <p className="text-slate-500 pt-1 border-t border-slate-200/60 whitespace-pre-line">
+                  {wire.instructions}
+                </p>
+              )}
             </div>
           )}
         </div>

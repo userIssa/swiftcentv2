@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 
 export interface AuthUser {
   id: string;
@@ -14,7 +15,13 @@ interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (name: string, email: string, password: string, businessName?: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (
+    name: string,
+    email: string,
+    password: string,
+    businessName?: string,
+    currency?: string
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -28,29 +35,16 @@ const AuthContext = createContext<AuthContextType>({
   refreshUser: async () => {},
 });
 
-async function parseAuthJson(res: Response, fallbackError: string): Promise<any> {
-  const raw = await res.text();
-  if (!raw) {
-    return { success: false, error: `${fallbackError} (HTTP ${res.status})` };
-  }
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return {
-      success: false,
-      error: `Server returned non-JSON response (HTTP ${res.status}). Check database connectivity and environment variables.`,
-    };
-  }
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refreshUser = async () => {
     try {
-      const res = await fetch('/api/auth/me');
-      const data = await parseAuthJson(res, 'Failed to check session');
+      const data = await fetchJsonWithBuffer('/api/auth/me', {
+        timeoutMs: 15000,
+        retry: true,
+      });
       if (data.success && data.user) {
         setUser(data.user);
       } else {
@@ -73,12 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     fallbackError: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const res = await fetch(endpoint, {
+      const data = await fetchJsonWithBuffer(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        timeoutMs: 20000,
       });
-      const data = await parseAuthJson(res, fallbackError);
       if (data.success && data.user) {
         setUser(data.user);
         return { success: true };
@@ -92,8 +86,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = (email: string, password: string) =>
     authenticate('/api/auth/login', { email, password }, 'Failed to login');
 
-  const signup = (name: string, email: string, password: string, businessName?: string) =>
-    authenticate('/api/auth/signup', { name, email, password, businessName }, 'Failed to create account');
+  const signup = (
+    name: string,
+    email: string,
+    password: string,
+    businessName?: string,
+    currency?: string
+  ) =>
+    authenticate(
+      '/api/auth/signup',
+      { name, email, password, businessName, currency },
+      'Failed to create account'
+    );
 
   const logout = async () => {
     try {

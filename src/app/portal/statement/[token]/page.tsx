@@ -18,6 +18,8 @@ import {
 import { StatusBadge } from '@/components/StatusBadge';
 import { QuoteStatusBadge } from '@/components/QuoteStatusBadge';
 import { formatCurrency } from '@/engine/calculator';
+import { getWireDisplayLabels } from '@/lib/banking-regions';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 
 export default function ClientStatementPage({
   params,
@@ -33,8 +35,10 @@ export default function ClientStatementPage({
     async function loadStatement() {
       try {
         setLoading(true);
-        const res = await fetch(`/api/portal/statement/${token}`);
-        const data = await res.json();
+        const data = await fetchJsonWithBuffer(`/api/portal/statement/${token}`, {
+          timeoutMs: 15000,
+          retry: true,
+        });
         if (data.success && data.statement) {
           setStatement(data.statement);
         } else {
@@ -327,47 +331,70 @@ export default function ClientStatementPage({
             </div>
           )}
 
-          {/* Bank Wire Settlement Instructions */}
-          {org.wireInstructions?.bankName && summary.totalBalanceCents > 0 && (
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                <Building className="w-4 h-4 text-blue-600" />
-                <span>Direct Wire / ACH Settlement Instructions</span>
-              </h3>
-              <p className="text-xs text-slate-500">
-                To settle outstanding account balances via bank wire, please reference client account{' '}
-                <span className="font-semibold text-slate-800">{client.name}</span>.
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
-                <div>
-                  <div className="text-[10px] text-slate-400 font-medium">Bank Name</div>
-                  <div className="font-semibold text-slate-800">{org.wireInstructions.bankName}</div>
+          {/* Global Bank Transfer Settlement Instructions */}
+          {(org.wireInstructions?.bankName || org.wireInstructions?.accountNumber) &&
+            summary.totalBalanceCents > 0 && (() => {
+              const wireLabels = getWireDisplayLabels(org.wireInstructions, currency);
+              return (
+                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    <Building className="w-4 h-4 text-blue-600" />
+                    <span>Bank Transfer & Settlement Instructions</span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    To settle outstanding account balances via local transfer or international wire, please reference{' '}
+                    <span className="font-semibold text-slate-800">{client.name}</span>.
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
+                    {org.wireInstructions.bankName && (
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-medium">Bank Name</div>
+                        <div className="font-semibold text-slate-800">{org.wireInstructions.bankName}</div>
+                      </div>
+                    )}
+                    {org.wireInstructions.accountName && (
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-medium">Beneficiary Name</div>
+                        <div className="font-semibold text-slate-800">{org.wireInstructions.accountName}</div>
+                      </div>
+                    )}
+                    {org.wireInstructions.accountNumber && (
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-medium">
+                          {wireLabels.accountShortLabel}
+                        </div>
+                        <div className="font-semibold text-slate-800 font-mono">
+                          {org.wireInstructions.accountNumber}
+                        </div>
+                      </div>
+                    )}
+                    {org.wireInstructions.routingNumber && (
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-medium">
+                          {wireLabels.routingShortLabel}
+                        </div>
+                        <div className="font-semibold text-slate-800 font-mono">
+                          {org.wireInstructions.routingNumber}
+                        </div>
+                      </div>
+                    )}
+                    {org.wireInstructions.swiftCode && (
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-medium">SWIFT / BIC</div>
+                        <div className="font-semibold text-slate-800 font-mono">
+                          {org.wireInstructions.swiftCode}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {org.wireInstructions.instructions && (
+                    <p className="text-xs text-slate-500 pt-2 border-t border-slate-200/70 whitespace-pre-line">
+                      {org.wireInstructions.instructions}
+                    </p>
+                  )}
                 </div>
-                {org.wireInstructions.accountName && (
-                  <div>
-                    <div className="text-[10px] text-slate-400 font-medium">Beneficiary Name</div>
-                    <div className="font-semibold text-slate-800">{org.wireInstructions.accountName}</div>
-                  </div>
-                )}
-                {org.wireInstructions.accountNumber && (
-                  <div>
-                    <div className="text-[10px] text-slate-400 font-medium">Account Number</div>
-                    <div className="font-semibold text-slate-800 font-mono">
-                      {org.wireInstructions.accountNumber}
-                    </div>
-                  </div>
-                )}
-                {org.wireInstructions.routingNumber && (
-                  <div>
-                    <div className="text-[10px] text-slate-400 font-medium">Routing / Sort Code</div>
-                    <div className="font-semibold text-slate-800 font-mono">
-                      {org.wireInstructions.routingNumber}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+              );
+            })()}
         </div>
       </div>
     </div>

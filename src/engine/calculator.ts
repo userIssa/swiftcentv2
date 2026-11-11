@@ -164,22 +164,32 @@ export function calculateInvoice(
 }
 
 /**
+ * Currencies that share "$" or ambiguous letters look clearest with explicit
+ * regional prefixes (e.g. CA$, A$, HK$, NZ$, MX$), while distinct symbols
+ * like USD ($), EUR (€), GBP (£), NGN (₦), INR (₹), and GHS (GH₵) render crisply
+ * with narrowSymbol.
+ */
+const SYMBOL_DISPLAY_CURRENCIES = new Set(['CAD', 'AUD', 'SGD', 'HKD', 'NZD', 'MXN']);
+
+/**
  * Formats integer cents into standard decimal string representation.
- * e.g. 1250 cents with USD -> "$12.50"
+ * e.g. 1250 cents with USD -> "$12.50", 125000 cents with NGN -> "₦1,250.00"
  */
 export function formatCurrency(
   cents: number,
   currency: string = 'USD',
   locale: string = 'en-US'
 ): string {
+  const code = (currency || 'USD').trim().toUpperCase() || 'USD';
   const amount = cents / 100;
   try {
     return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency,
+      currency: code,
+      currencyDisplay: SYMBOL_DISPLAY_CURRENCIES.has(code) ? 'symbol' : 'narrowSymbol',
       minimumFractionDigits: 2,
     }).format(amount);
   } catch {
-    return `${currency} ${(cents / 100).toFixed(2)}`;
+    return `${code} ${(cents / 100).toFixed(2)}`;
   }
 }

@@ -28,11 +28,13 @@ export interface IOrganization extends Document {
     stripeWebhookSecret?: string;
   };
   wireInstructions?: {
+    bankRegion?: string;
     bankName?: string;
     accountName?: string;
     accountNumber?: string;
     routingNumber?: string;
     swiftCode?: string;
+    instructions?: string;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -67,18 +69,23 @@ const OrganizationSchema = new Schema<IOrganization>(
       stripeWebhookSecret: String,
     },
     wireInstructions: {
+      bankRegion: String,
       bankName: String,
       accountName: String,
       accountNumber: String,
       routingNumber: String,
       swiftCode: String,
+      instructions: String,
     },
   },
   { timestamps: true }
 );
 
 export const Organization: Model<IOrganization> =
-  (mongoose.models && mongoose.models.Organization && mongoose.models.Organization.schema.paths.ownerId
+  (mongoose.models &&
+  mongoose.models.Organization &&
+  mongoose.models.Organization.schema.paths.ownerId &&
+  mongoose.models.Organization.schema.paths['wireInstructions.bankRegion']
     ? mongoose.models.Organization
     : null) ||
   (() => {

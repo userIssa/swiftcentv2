@@ -438,3 +438,61 @@ test('executeVoiceToolCall end_voice_session schedules session end and inactivit
   assert.ok(logs.includes('Ending voice session'));
 });
 
+test('executeVoiceToolCall supports switching currency per draft to global currencies like NGN', async () => {
+  let activeCurrency = 'USD';
+  const draftRef: { current: VoiceDocumentDraft } = {
+    current: {
+      documentType: 'invoice',
+      organizationId: 'org1',
+      selectedClientId: '',
+      currency: 'USD',
+      issueDate: '2026-11-11',
+      dueOrValidDate: '2026-11-25',
+      notes: '',
+      terms: '',
+      items: [
+        {
+          id: '1',
+          description: 'Branding Sprint',
+          quantity: '1',
+          unitPrice: '500000',
+          discountType: 'percentage',
+          discountValue: '0',
+          taxName: 'VAT',
+          taxRate: '7.5',
+          taxMethod: 'exclusive',
+        },
+      ],
+    },
+  };
+
+  const resp = await executeVoiceToolCall(
+    {
+      id: 'call_currency_1',
+      name: 'set_document_details',
+      args: { currency: 'ngn' },
+    },
+    {
+      draftRef,
+      clientsDirectoryRef: { current: [] },
+      actions: {
+        setClientById: () => {},
+        setCurrency: (c) => {
+          activeCurrency = c;
+        },
+        setIssueDate: () => {},
+        setDueOrValidDate: () => {},
+        setNotes: () => {},
+        setTerms: () => {},
+        setItems: () => {},
+      },
+      onActionLog: () => {},
+    }
+  );
+
+  assert.equal(activeCurrency, 'NGN');
+  assert.equal(draftRef.current.currency, 'NGN');
+  assert.equal((resp.response as any).summary.currency, 'NGN');
+  assert.equal((resp.response as any).summary.formattedGrandTotal, '₦537,500.00');
+});
+

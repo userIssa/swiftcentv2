@@ -15,9 +15,12 @@ import {
   Download,
 } from 'lucide-react';
 import { useActiveBusiness } from '@/context/ActiveBusinessContext';
+import { CurrencySelect } from '@/components/CurrencySelect';
+import { CountrySelect } from '@/components/CountrySelect';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 
 export default function ClientsPage() {
-  const { activeBusiness } = useActiveBusiness();
+  const { activeBusiness, loading: businessLoading } = useActiveBusiness();
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -34,15 +37,14 @@ export default function ClientsPage() {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [postalCode, setPostalCode] = useState('');
-  const [country, setCountry] = useState('USA');
+  const [country, setCountry] = useState('');
   const [paymentTermsDays, setPaymentTermsDays] = useState(14);
 
   const loadClients = async () => {
     try {
       setLoading(true);
       const url = activeBusiness?._id ? `/api/clients?organizationId=${activeBusiness._id}` : '/api/clients';
-      const res = await fetch(url);
-      const data = await res.json();
+      const data = await fetchJsonWithBuffer(url, { timeoutMs: 15000, retry: true });
       if (data.success && data.clients) {
         setClients(data.clients);
       }
@@ -54,21 +56,25 @@ export default function ClientsPage() {
   };
 
   useEffect(() => {
+    if (businessLoading) {
+      setLoading(true);
+      return;
+    }
     loadClients();
-  }, [activeBusiness?._id]);
+  }, [activeBusiness?._id, businessLoading]);
 
   const handleOpenAdd = () => {
     setEditingClient(null);
     setName('');
     setEmail('');
     setPhone('');
-    setCurrency('USD');
+    setCurrency(activeBusiness?.currency || 'USD');
     setTaxId('');
     setStreet('');
     setCity('');
     setState('');
     setPostalCode('');
-    setCountry('USA');
+    setCountry('');
     setPaymentTermsDays(14);
     setShowModal(true);
   };
@@ -84,7 +90,7 @@ export default function ClientsPage() {
     setCity(client.billingAddress?.city || '');
     setState(client.billingAddress?.state || '');
     setPostalCode(client.billingAddress?.postalCode || '');
-    setCountry(client.billingAddress?.country || 'USA');
+    setCountry(client.billingAddress?.country || '');
     setPaymentTermsDays(client.paymentTermsDays || 14);
     setShowModal(true);
   };
@@ -322,7 +328,7 @@ export default function ClientsPage() {
       {/* Add / Edit Client Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-slate-900">
               {editingClient ? 'Edit Client Profile' : 'Add New Client'}
             </h3>
@@ -370,17 +376,12 @@ export default function ClientsPage() {
 
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">Default Currency</label>
-                  <select
+                  <CurrencySelect
                     value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    className="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  >
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
-                    <option value="CAD">CAD ($)</option>
-                    <option value="AUD">AUD ($)</option>
-                  </select>
+                    onChange={setCurrency}
+                    compact
+                    ariaLabel="Client Default Currency"
+                  />
                 </div>
 
                 <div>
@@ -395,10 +396,10 @@ export default function ClientsPage() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Tax ID / VAT Number</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Tax ID / VAT / TIN Number</label>
                   <input
                     type="text"
-                    placeholder="e.g. EU123456789 or EIN-12-3456789"
+                    placeholder="e.g. VAT, TIN, GST, ABN, or EIN"
                     value={taxId}
                     onChange={(e) => setTaxId(e.target.value)}
                     className="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -428,11 +429,10 @@ export default function ClientsPage() {
 
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">Country</label>
-                  <input
-                    type="text"
+                  <CountrySelect
                     value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    className="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    onChange={setCountry}
+                    ariaLabel="Client Country"
                   />
                 </div>
               </div>

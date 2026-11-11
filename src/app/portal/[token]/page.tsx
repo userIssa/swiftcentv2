@@ -16,6 +16,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { DocumentTemplateView } from '@/components/DocumentTemplateView';
 import { formatCurrency } from '@/engine/calculator';
 import { InvoiceStatus } from '@/engine/state-machine';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 
 export default function ClientPortalPage({
   params,
@@ -33,8 +34,10 @@ export default function ClientPortalPage({
   const fetchInvoice = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/portal/${token}`);
-      const data = await res.json();
+      const data = await fetchJsonWithBuffer(`/api/portal/${token}`, {
+        timeoutMs: 15000,
+        retry: true,
+      });
       if (data.success && data.invoice) {
         setInvoice(data.invoice);
       } else {

@@ -1,5 +1,7 @@
 import { FunctionCall, FunctionResponse, FunctionResponseScheduling } from '@google/genai';
 import { formatCurrency } from '@/engine/calculator';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
+import { normalizeCurrencyCode } from '@/lib/currencies';
 import {
   buildLiveDraftSummary,
   computeDueDateIso,
@@ -27,15 +29,16 @@ async function resolveFromWorkspace(
   organizationId: string,
   params: { clientQuery?: string; productQuery?: string }
 ): Promise<VoiceResolveResponse> {
-  const res = await fetch('/api/voice/resolve', {
+  return fetchJsonWithBuffer<VoiceResolveResponse>('/api/voice/resolve', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       organizationId,
       ...params,
     }),
+    timeoutMs: 12000,
+    retry: true,
   });
-  return res.json();
 }
 
 function getSelectedClientName(ctx: ToolExecutionContext): string | null {
@@ -412,11 +415,14 @@ function handleSetDocumentDetails(
 ): { output: Record<string, unknown>; scheduling: FunctionResponseScheduling } {
   const changes: string[] = [];
 
-  if (typeof args.currency === 'string' && ['USD', 'EUR', 'GBP', 'CAD', 'AUD'].includes(args.currency)) {
-    ctx.draftRef.current.currency = args.currency;
-    ctx.actions.setCurrency(args.currency);
-    ctx.actions.onFieldFlash?.('currency');
-    changes.push(`Currency: ${args.currency}`);
+  if (typeof args.currency === 'string' && args.currency.trim()) {
+    const normalizedCurrency = normalizeCurrencyCode(args.currency, ctx.draftRef.current.currency);
+    if (normalizedCurrency !== ctx.draftRef.current.currency || args.currency.trim().toUpperCase() === normalizedCurrency) {
+      ctx.draftRef.current.currency = normalizedCurrency;
+      ctx.actions.setCurrency(normalizedCurrency);
+      ctx.actions.onFieldFlash?.('currency');
+      changes.push(`Currency: ${normalizedCurrency}`);
+    }
   }
 
   if (typeof args.issueDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(args.issueDate)) {
@@ -548,9 +554,8 @@ async function handleCreateClient(
       email,
       phone: typeof args.phone === 'string' && args.phone.trim() ? args.phone.trim() : undefined,
       currency:
-        typeof args.currency === 'string' &&
-        ['USD', 'EUR', 'GBP', 'CAD', 'AUD'].includes(args.currency)
-          ? args.currency
+        typeof args.currency === 'string' && args.currency.trim()
+          ? normalizeCurrencyCode(args.currency, ctx.draftRef.current.currency || 'USD')
           : ctx.draftRef.current.currency || 'USD',
       taxId: typeof args.taxId === 'string' && args.taxId.trim() ? args.taxId.trim() : undefined,
       paymentTermsDays:

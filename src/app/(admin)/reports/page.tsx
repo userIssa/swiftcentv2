@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/engine/calculator';
 import { useActiveBusiness } from '@/context/ActiveBusinessContext';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 
 interface AgingBucket {
   label: string;
@@ -49,12 +50,18 @@ interface TaxSummary {
 }
 
 export default function ReportsPage() {
-  const { activeBusiness } = useActiveBusiness();
+  const { activeBusiness, loading: businessLoading } = useActiveBusiness();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (businessLoading) {
+      setLoading(true);
+      return;
+    }
+
+    let cancelled = false;
     async function loadData() {
       try {
         setLoading(true);
@@ -62,9 +69,12 @@ export default function ReportsPage() {
         const invUrl = orgId ? `/api/invoices?organizationId=${orgId}` : '/api/invoices';
         const quoteUrl = orgId ? `/api/quotes?organizationId=${orgId}` : '/api/quotes';
 
-        const [invRes, quoteRes] = await Promise.all([fetch(invUrl), fetch(quoteUrl)]);
-        const [invData, quoteData] = await Promise.all([invRes.json(), quoteRes.json()]);
+        const [invData, quoteData] = await Promise.all([
+          fetchJsonWithBuffer(invUrl, { timeoutMs: 15000, retry: true }),
+          fetchJsonWithBuffer(quoteUrl, { timeoutMs: 15000, retry: true }),
+        ]);
 
+        if (cancelled) return;
         if (invData.success && invData.invoices) {
           setInvoices(invData.invoices);
         }
@@ -74,12 +84,15 @@ export default function ReportsPage() {
       } catch (err) {
         console.error('Failed to load reports data', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     loadData();
-  }, [activeBusiness?._id]);
+    return () => {
+      cancelled = true;
+    };
+  }, [activeBusiness?._id, businessLoading]);
 
   const currency = activeBusiness?.currency || 'USD';
 

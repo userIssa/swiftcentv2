@@ -20,7 +20,12 @@ import {
 import { StatusBadge } from '@/components/StatusBadge';
 import { SendDocumentModal } from '@/components/SendDocumentModal';
 import { DocumentTemplateView } from '@/components/DocumentTemplateView';
+import { CurrencySelect } from '@/components/CurrencySelect';
+import { SearchableCombobox } from '@/components/SearchableCombobox';
 import { formatCurrency } from '@/engine/calculator';
+import { getCurrencySymbol } from '@/lib/currencies';
+import { PAYMENT_METHOD_OPTIONS } from '@/lib/combobox-options';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 import { InvoiceStatus, isInvoiceLocked } from '@/engine/state-machine';
 
 export default function InvoiceDetailPage({
@@ -45,8 +50,10 @@ export default function InvoiceDetailPage({
   const loadInvoice = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/invoices/${id}`);
-      const data = await res.json();
+      const data = await fetchJsonWithBuffer(`/api/invoices/${id}`, {
+        timeoutMs: 15000,
+        retry: true,
+      });
       if (data.success && data.invoice) {
         setInvoice(data.invoice);
         setPaymentAmount((data.invoice.balanceDueCents / 100).toFixed(2));
@@ -75,6 +82,28 @@ export default function InvoiceDetailPage({
         await loadInvoice();
       } else {
         alert(data.error);
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCurrencyChange = async (nextCurrency: string) => {
+    if (!invoice || nextCurrency === invoice.currency) return;
+    try {
+      setActionLoading(true);
+      const res = await fetch(`/api/invoices/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currency: nextCurrency, actor: 'admin' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        await loadInvoice();
+      } else {
+        alert(data.error || 'Failed to update invoice currency');
       }
     } catch (err: any) {
       alert(err.message);
@@ -220,6 +249,18 @@ export default function InvoiceDetailPage({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {!isLocked && (
+            <div className="w-40">
+              <CurrencySelect
+                compact
+                value={invoice.currency || 'USD'}
+                disabled={actionLoading}
+                onChange={handleCurrencyChange}
+                ariaLabel="Draft Invoice Currency"
+              />
+            </div>
+          )}
+
           {/* Public Portal Link */}
           <button
             onClick={copyPortalLink}
@@ -337,7 +378,7 @@ export default function InvoiceDetailPage({
             <form onSubmit={handleRecordPayment} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Payment Amount ($)
+                  Payment Amount ({getCurrencySymbol(invoice.currency)} {invoice.currency || 'USD'})
                 </label>
                 <input
                   type="number"
@@ -354,17 +395,13 @@ export default function InvoiceDetailPage({
                 <label className="block text-xs font-medium text-slate-700 mb-1">
                   Payment Method
                 </label>
-                <select
+                <SearchableCombobox
                   value={paymentMethod}
-                  onChange={(e: any) => setPaymentMethod(e.target.value)}
-                  className="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                >
-                  <option value="stripe">Stripe</option>
-                  <option value="bank_transfer">Bank Transfer (ACH / Wire)</option>
-                  <option value="credit_card">Credit Card (Terminal)</option>
-                  <option value="cash">Cash / Check</option>
-                  <option value="manual">Other / Manual</option>
-                </select>
+                  onChange={(val) => setPaymentMethod(val as typeof paymentMethod)}
+                  options={PAYMENT_METHOD_OPTIONS}
+                  searchCaption="Select Payment Method"
+                  ariaLabel="Payment Method"
+                />
               </div>
 
               <div>
@@ -408,6 +445,7 @@ export default function InvoiceDetailPage({
         documentType="invoice"
         documentNumber={invoice.invoiceNumber}
         amountCents={invoice.balanceDueCents || invoice.grandTotalCents}
+        currency={invoice.currency}
         clientName={invoice.clientSnapshot?.name || invoice.clientId?.name || 'Valued Client'}
         clientEmail={invoice.clientSnapshot?.email || invoice.clientId?.email || ''}
         publicToken={invoice.publicAccessToken}

@@ -1,6 +1,6 @@
 export type VoiceDocumentType = 'invoice' | 'quote';
 
-export type SupportedCurrency = 'USD' | 'EUR' | 'GBP' | 'CAD' | 'AUD';
+export type SupportedCurrency = string;
 
 export interface VoiceFormLineItem {
   id: string;

@@ -3,11 +3,12 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { Organization } from '@/models/Organization';
 import { hashPassword, createSessionToken, serializeSessionUser } from '@/lib/auth';
+import { normalizeCurrencyCode } from '@/lib/currencies';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, password, businessName } = body;
+    const { name, email, password, businessName, currency } = body;
 
     if (!name || !email || !password) {
       return NextResponse.json({ success: false, error: 'Name, email, and password are required' }, { status: 400 });
@@ -38,12 +39,13 @@ export async function POST(request: Request) {
     const firstName = name.trim().split(' ')[0] || 'My';
     const orgName = (businessName && businessName.trim()) || `${firstName}'s Workspace`;
     const prefix = firstName.slice(0, 3).toUpperCase() || 'INV';
+    const preferredCurrency = normalizeCurrencyCode(currency, 'USD');
 
     await Organization.create({
       name: orgName,
       email: normalizedEmail,
       ownerId: user._id,
-      currency: 'USD',
+      currency: preferredCurrency,
       invoicePrefix: prefix,
       nextInvoiceNumber: 1001,
       quotePrefix: 'QTE',

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Organization } from '@/models/Organization';
 import { getSessionUser } from '@/lib/auth';
+import { normalizeCurrencyCode } from '@/lib/currencies';
 
 export async function GET() {
   try {
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
       name: body.name.trim(),
       email: body.email.trim(),
       ownerId: session.userId,
-      currency: body.currency || 'USD',
+      currency: normalizeCurrencyCode(body.currency, 'USD'),
       invoicePrefix: body.invoicePrefix || 'INV',
       nextInvoiceNumber: 1001,
       quotePrefix: body.quotePrefix || 'QTE',

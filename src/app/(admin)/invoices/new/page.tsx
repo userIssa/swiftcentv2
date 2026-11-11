@@ -16,8 +16,17 @@ import {
 import { calculateInvoice, formatCurrency } from '@/engine/calculator';
 import { RawLineItem } from '@/types/financial';
 import { NumericInput } from '@/components/NumericInput';
+import { CurrencySelect } from '@/components/CurrencySelect';
+import { SearchableCombobox } from '@/components/SearchableCombobox';
 import { VoiceDraftCopilot } from '@/components/VoiceDraftCopilot';
 import { useActiveBusiness } from '@/context/ActiveBusinessContext';
+import { getCurrencySymbol } from '@/lib/currencies';
+import {
+  buildOrganizationOptions,
+  buildClientOptions,
+  buildProductOptions,
+} from '@/lib/combobox-options';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 import { draftItemsToRawLineItems } from '@/lib/voice/catalog-matcher';
 import { useDocumentVoiceBridge } from '@/lib/voice/useDocumentVoiceBridge';
 import { VoiceFormLineItem } from '@/lib/voice/types';
@@ -26,7 +35,7 @@ type FormLineItem = VoiceFormLineItem;
 
 export default function NewInvoicePage() {
   const router = useRouter();
-  const { activeBusiness } = useActiveBusiness();
+  const { activeBusiness, loading: businessLoading } = useActiveBusiness();
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState('');
   const [clients, setClients] = useState<any[]>([]);
@@ -36,7 +45,8 @@ export default function NewInvoicePage() {
 
   // Form State
   const [selectedClientId, setSelectedClientId] = useState('');
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState(activeBusiness?.currency || 'USD');
+  const [currencyOverridden, setCurrencyOverridden] = useState(false);
   const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
   const [dueDate, setDueDate] = useState(
     new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]
@@ -61,19 +71,23 @@ export default function NewInvoicePage() {
   ]);
 
   useEffect(() => {
+    if (businessLoading) {
+      setLoading(true);
+      return;
+    }
+
+    let cancelled = false;
     async function loadInitialData() {
       try {
         setLoading(true);
-        const [orgsRes, clientsRes, prodsRes] = await Promise.all([
-          fetch('/api/organizations'),
-          fetch('/api/clients'),
-          fetch('/api/products'),
-        ]);
+        const orgQuery = activeBusiness?._id ? `?organizationId=${activeBusiness._id}` : '';
         const [orgsData, clientsData, prodsData] = await Promise.all([
-          orgsRes.json(),
-          clientsRes.json(),
-          prodsRes.json(),
+          fetchJsonWithBuffer('/api/organizations', { timeoutMs: 15000, retry: true }),
+          fetchJsonWithBuffer(`/api/clients${orgQuery}`, { timeoutMs: 15000, retry: true }),
+          fetchJsonWithBuffer(`/api/products${orgQuery}`, { timeoutMs: 15000, retry: true }),
         ]);
+
+        if (cancelled) return;
 
         if (orgsData.success && orgsData.organizations?.length > 0) {
           setOrganizations(orgsData.organizations);
@@ -97,13 +111,23 @@ export default function NewInvoicePage() {
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     loadInitialData();
-  }, [activeBusiness?._id]);
+    return () => {
+      cancelled = true;
+    };
+  }, [activeBusiness?._id, businessLoading]);
+
+  useEffect(() => {
+    if (!currencyOverridden && activeBusiness?.currency) {
+      setCurrency(activeBusiness.currency);
+    }
+  }, [activeBusiness?.currency, currencyOverridden]);
 
   const selectedOrg = organizations.find((o) => o._id === selectedOrgId);
+  const selectedClient = clients.find((c) => c._id === selectedClientId);
 
   // Compute live calculation using financial engine
   const rawLineItems: RawLineItem[] = draftItemsToRawLineItems(items);
@@ -286,21 +310,19 @@ export default function NewInvoicePage() {
                 <label className="block text-xs font-medium text-slate-700 mb-1">
                   Select Registered Business <span className="text-rose-500">*</span>
                 </label>
-                <select
+                <SearchableCombobox
                   value={selectedOrgId}
-                  onChange={(e) => {
-                    setSelectedOrgId(e.target.value);
-                    const chosen = organizations.find((o) => o._id === e.target.value);
+                  onChange={(val) => {
+                    setSelectedOrgId(val);
+                    setCurrencyOverridden(false);
+                    const chosen = organizations.find((o) => o._id === val);
                     if (chosen?.currency) setCurrency(chosen.currency);
                   }}
-                  className="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
-                >
-                  {organizations.map((org) => (
-                    <option key={org._id} value={org._id}>
-                      {org.name} ({org.email})
-                    </option>
-                  ))}
-                </select>
+                  options={buildOrganizationOptions(organizations)}
+                  searchCaption="Select Registered Business"
+                  placeholder={loading ? 'Loading businesses...' : 'Select a business'}
+                  ariaLabel="Select Registered Business"
+                />
               </div>
 
               {/* Business Logo Preview Card */}
@@ -361,33 +383,48 @@ export default function NewInvoicePage() {
                     </Link>
                   </div>
                 ) : (
-                  <select
+                  <SearchableCombobox
                     value={selectedClientId}
-                    onChange={(e) => setSelectedClientId(e.target.value)}
-                    className="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  >
-                    {clients.map((c) => (
-                      <option key={c._id} value={c._id}>
-                        {c.name} ({c.email})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setSelectedClientId}
+                    options={buildClientOptions(clients)}
+                    searchCaption="Select Client"
+                    placeholder="Choose a client"
+                    ariaLabel="Select Client"
+                  />
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Currency</label>
-                <select
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-medium text-slate-700">
+                    Invoice Currency
+                  </label>
+                  {selectedClient?.currency && selectedClient.currency !== currency && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrencyOverridden(true);
+                        setCurrency(selectedClient.currency);
+                      }}
+                      className="text-[11px] font-semibold text-blue-600 hover:underline cursor-pointer"
+                    >
+                      Use client ({selectedClient.currency})
+                    </button>
+                  )}
+                </div>
+                <CurrencySelect
                   value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                >
-                  <option value="USD">USD ($) - US Dollar</option>
-                  <option value="EUR">EUR (€) - Euro</option>
-                  <option value="GBP">GBP (£) - British Pound</option>
-                  <option value="CAD">CAD ($) - Canadian Dollar</option>
-                  <option value="AUD">AUD ($) - Australian Dollar</option>
-                </select>
+                  onChange={(next) => {
+                    setCurrencyOverridden(true);
+                    setCurrency(next);
+                  }}
+                  ariaLabel="Invoice Currency"
+                />
+                {selectedOrg?.currency && (
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Workspace default: {selectedOrg.currency} — override freely for this invoice.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -449,26 +486,25 @@ export default function NewInvoicePage() {
                             Description <span className="text-rose-500">*</span>
                           </label>
                           {products.length > 0 && (
-                            <select
-                              className="text-[11px] text-blue-600 bg-blue-50/70 hover:bg-blue-100/80 border border-blue-200/60 rounded px-2 py-0.5 font-medium cursor-pointer transition-colors"
-                              value=""
-                              onChange={(e) => {
-                                const p = products.find((prod) => prod._id === e.target.value);
-                                if (p) {
-                                  updateItem(it.id, 'description', p.name + (p.description ? ` - ${p.description}` : ''));
-                                  updateItem(it.id, 'unitPrice', (p.unitPriceCents / 100).toString());
-                                  if (p.taxRate !== undefined) updateItem(it.id, 'taxRate', p.taxRate.toString());
-                                  if (p.taxMethod) updateItem(it.id, 'taxMethod', p.taxMethod);
-                                }
-                              }}
-                            >
-                              <option value="" disabled>+ Fill from Catalog</option>
-                              {products.map((p) => (
-                                <option key={p._id} value={p._id}>
-                                  {p.name} (${(p.unitPriceCents / 100).toFixed(2)})
-                                </option>
-                              ))}
-                            </select>
+                            <div className="w-52 sm:w-60 shrink-0">
+                              <SearchableCombobox
+                                compact
+                                value=""
+                                placeholder="+ Fill from Catalog"
+                                searchCaption="Catalog Item"
+                                ariaLabel="Fill line item from catalog"
+                                options={buildProductOptions(products, selectedOrg?.currency || currency)}
+                                onChange={(productId) => {
+                                  const p = products.find((prod) => prod._id === productId);
+                                  if (p) {
+                                    updateItem(it.id, 'description', p.name + (p.description ? ` - ${p.description}` : ''));
+                                    updateItem(it.id, 'unitPrice', (p.unitPriceCents / 100).toString());
+                                    if (p.taxRate !== undefined) updateItem(it.id, 'taxRate', p.taxRate.toString());
+                                    if (p.taxMethod) updateItem(it.id, 'taxMethod', p.taxMethod);
+                                  }
+                                }}
+                              />
+                            </div>
                           )}
                         </div>
                         <input
@@ -503,7 +539,7 @@ export default function NewInvoicePage() {
 
                       <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1">
-                          Unit Price ($)
+                          Unit Price ({getCurrencySymbol(currency)} {currency})
                         </label>
                         <NumericInput
                           value={it.unitPrice}

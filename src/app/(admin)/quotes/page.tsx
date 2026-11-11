@@ -17,6 +17,7 @@ import { QuoteStatusBadge } from '@/components/QuoteStatusBadge';
 import { formatCurrency } from '@/engine/calculator';
 import { QuoteStatus } from '@/models/Quote';
 import { useActiveBusiness } from '@/context/ActiveBusinessContext';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 
 const TABS = [
   { id: 'all', label: 'All Quotes' },
@@ -28,7 +29,7 @@ const TABS = [
 ];
 
 export default function QuotesListPage() {
-  const { activeBusiness } = useActiveBusiness();
+  const { activeBusiness, loading: businessLoading } = useActiveBusiness();
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('all');
@@ -45,8 +46,7 @@ export default function QuotesListPage() {
       }
       const qs = params.toString();
       const url = qs ? `/api/quotes?${qs}` : '/api/quotes';
-      const res = await fetch(url);
-      const data = await res.json();
+      const data = await fetchJsonWithBuffer(url, { timeoutMs: 15000, retry: true });
       if (data.success && data.quotes) {
         setQuotes(data.quotes);
       }
@@ -58,8 +58,12 @@ export default function QuotesListPage() {
   };
 
   useEffect(() => {
+    if (businessLoading) {
+      setLoading(true);
+      return;
+    }
     loadQuotes(selectedTab, businessFilter);
-  }, [selectedTab, businessFilter, activeBusiness?._id]);
+  }, [selectedTab, businessFilter, activeBusiness?._id, businessLoading]);
 
   const filteredQuotes = quotes.filter((q) => {
     if (!searchTerm) return true;

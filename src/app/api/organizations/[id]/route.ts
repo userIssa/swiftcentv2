@@ -6,6 +6,7 @@ import { Quote } from '@/models/Quote';
 import { Client } from '@/models/Client';
 import { Payment } from '@/models/Payment';
 import { getSessionUser } from '@/lib/auth';
+import { normalizeCurrencyCode } from '@/lib/currencies';
 
 export async function GET(
   request: Request,
@@ -59,6 +60,9 @@ export async function PATCH(
     const body = await request.json();
 
     const updateData: any = { ...body };
+    if (body.currency !== undefined) {
+      updateData.currency = normalizeCurrencyCode(body.currency, existing.currency || 'USD');
+    }
     if (body.logoUrl !== undefined || body.branding?.logoUrl !== undefined) {
       updateData['branding.logoUrl'] = body.logoUrl !== undefined ? body.logoUrl : body.branding?.logoUrl;
       delete updateData.logoUrl;

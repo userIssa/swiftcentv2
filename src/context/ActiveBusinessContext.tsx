@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 
 export interface BusinessProfile {
   _id: string;
@@ -41,21 +42,31 @@ const ActiveBusinessContext = createContext<ActiveBusinessContextType>({
 });
 
 export function ActiveBusinessProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [businesses, setBusinesses] = useState<BusinessProfile[]>([]);
   const [activeBusinessId, setActiveBusinessIdState] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   const fetchBusinesses = useCallback(async () => {
+    if (authLoading) return;
+    if (!user) {
+      setBusinesses([]);
+      setActiveBusinessIdState('');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const res = await fetch('/api/organizations');
-      const data = await res.json();
+      const data = await fetchJsonWithBuffer('/api/organizations', {
+        timeoutMs: 18000,
+        retry: true,
+      });
       if (data.success && Array.isArray(data.organizations)) {
         setBusinesses(data.organizations);
 
         if (data.organizations.length > 0) {
-          const userStorageKey = user ? `swiftcent_active_org_${user.id}` : 'swiftcent_active_org';
+          const userStorageKey = `swiftcent_active_org_${user.id}`;
           const savedId = typeof window !== 'undefined' ? localStorage.getItem(userStorageKey) : null;
           const exists = data.organizations.some((b: BusinessProfile) => b._id === savedId);
 
@@ -77,7 +88,7 @@ export function ActiveBusinessProvider({ children }: { children: React.ReactNode
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [authLoading, user]);
 
   useEffect(() => {
     fetchBusinesses();

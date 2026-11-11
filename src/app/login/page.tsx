@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { CurrencySelect } from '@/components/CurrencySelect';
 import {
   Lock,
   Mail,
@@ -31,6 +32,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [name, setName] = useState('');
   const [businessName, setBusinessName] = useState('');
+  const [currency, setCurrency] = useState('USD');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -43,7 +45,7 @@ export default function LoginPage() {
     setLoading(true);
 
     if (mode === 'signup') {
-      const res = await signup(name, email, password, businessName);
+      const res = await signup(name, email, password, businessName, currency);
       setLoading(false);
       if (res.success) {
         router.push('/dashboard');
@@ -134,6 +136,18 @@ export default function LoginPage() {
                     />
                     <Building className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                    Preferred Currency
+                  </label>
+                  <CurrencySelect
+                    variant="dark"
+                    value={currency}
+                    onChange={setCurrency}
+                    ariaLabel="Preferred Currency"
+                  />
                 </div>
               </>
             )}

@@ -16,6 +16,7 @@ import { QuoteStatusBadge } from '@/components/QuoteStatusBadge';
 import { DocumentTemplateView } from '@/components/DocumentTemplateView';
 import { formatCurrency } from '@/engine/calculator';
 import { QuoteStatus } from '@/models/Quote';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 
 export default function ClientQuotePortalPage({
   params,
@@ -33,8 +34,10 @@ export default function ClientQuotePortalPage({
   const fetchQuote = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/portal/quotes/${token}`);
-      const data = await res.json();
+      const data = await fetchJsonWithBuffer(`/api/portal/quotes/${token}`, {
+        timeoutMs: 15000,
+        retry: true,
+      });
       if (data.success && data.quote) {
         setQuote(data.quote);
         setClientSignName(data.quote.clientSnapshot?.name || '');

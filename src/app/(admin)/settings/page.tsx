@@ -3,6 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { useActiveBusiness } from '@/context/ActiveBusinessContext';
 import { useAuth } from '@/context/AuthContext';
+import { CurrencySelect } from '@/components/CurrencySelect';
+import { SearchableCombobox } from '@/components/SearchableCombobox';
+import {
+  BANKING_REGION_PRESETS,
+  getBankingPreset,
+  inferDefaultBankingRegion,
+} from '@/lib/banking-regions';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 import { clearSampleWorkspaceData, loadSampleWorkspaceData } from '@/lib/sample-data-client';
 import {
   CreditCard,
@@ -67,12 +75,14 @@ export default function SettingsPage() {
   const [quotePrefix, setQuotePrefix] = useState('QTE');
   const [taxId, setTaxId] = useState('');
 
-  // Wire Instructions State
+  // Global Bank Transfer & Settlement State
+  const [bankRegion, setBankRegion] = useState('global');
   const [bankName, setBankName] = useState('');
   const [accountName, setAccountName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [routingNumber, setRoutingNumber] = useState('');
   const [swiftCode, setSwiftCode] = useState('');
+  const [bankInstructions, setBankInstructions] = useState('');
 
   useEffect(() => {
     if (activeBusiness) {
@@ -81,9 +91,11 @@ export default function SettingsPage() {
       setQuotePrefix(activeBusiness.quotePrefix || 'QTE');
       setTaxId(activeBusiness.taxId || '');
 
-      // Load full organization details
-      fetch(`/api/organizations/${activeBusiness._id}`)
-        .then((r) => r.json())
+      // Load full organization details with cold-start retry buffer
+      fetchJsonWithBuffer(`/api/organizations/${activeBusiness._id}`, {
+        timeoutMs: 15000,
+        retry: true,
+      })
         .then((data) => {
           if (data.success && data.organization) {
             const org = data.organization;
@@ -92,11 +104,19 @@ export default function SettingsPage() {
             setStripeSecretKey(org.paymentGateways?.stripeSecretKey || '');
 
             if (org.wireInstructions) {
+              setBankRegion(
+                org.wireInstructions.bankRegion ||
+                  inferDefaultBankingRegion(org.currency || activeBusiness.currency)
+              );
               setBankName(org.wireInstructions.bankName || '');
               setAccountName(org.wireInstructions.accountName || '');
               setAccountNumber(org.wireInstructions.accountNumber || '');
               setRoutingNumber(org.wireInstructions.routingNumber || '');
               setSwiftCode(org.wireInstructions.swiftCode || '');
+              setBankInstructions(org.wireInstructions.instructions || '');
+            } else {
+              setBankRegion(inferDefaultBankingRegion(org.currency || activeBusiness.currency));
+              setBankInstructions('');
             }
           }
         })
@@ -124,11 +144,13 @@ export default function SettingsPage() {
             stripeSecretKey,
           },
           wireInstructions: {
+            bankRegion,
             bankName,
             accountName,
             accountNumber,
             routingNumber,
             swiftCode,
+            instructions: bankInstructions,
           },
         }),
       });
@@ -147,6 +169,8 @@ export default function SettingsPage() {
       setLoading(false);
     }
   };
+
+  const bankingPreset = getBankingPreset(bankRegion, currency);
 
   return (
     <div className="max-w-4xl space-y-8 pb-12">
@@ -235,15 +259,39 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Section 2: Direct Wire & ACH Instructions */}
+        {/* Section 2: Global Bank Transfer & Settlement Instructions */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6 space-y-5">
-          <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <Landmark className="w-5 h-5" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <Landmark className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Bank Transfer & Settlement Details</h3>
+                <p className="text-xs text-slate-400">
+                  Works globally for NUBAN, SEPA / IBAN, Sort Code, BSB, IFSC, ACH, and SWIFT wires
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Direct Wire & ACH Bank Details</h3>
-              <p className="text-xs text-slate-400">Included on client invoice footers for manual and wire settlements</p>
+
+            <div className="w-full sm:w-[21rem] shrink-0">
+              <SearchableCombobox
+                value={bankRegion}
+                onChange={setBankRegion}
+                searchCaption="Select Banking Region"
+                ariaLabel="Banking Region / Transfer System"
+                options={BANKING_REGION_PRESETS.map((preset) => ({
+                  value: preset.id,
+                  label: preset.label,
+                  icon: preset.flag,
+                  searchText: [
+                    preset.label,
+                    preset.routingLabel,
+                    preset.accountLabel,
+                    preset.swiftLabel,
+                  ].join(' '),
+                }))}
+              />
             </div>
           </div>
 
@@ -254,7 +302,7 @@ export default function SettingsPage() {
               </label>
               <input
                 type="text"
-                placeholder="e.g. JPMorgan Chase Bank"
+                placeholder={bankingPreset.bankPlaceholder}
                 value={bankName}
                 onChange={(e) => setBankName(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -262,11 +310,11 @@ export default function SettingsPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Account Holder Name
+                Account Holder / Beneficiary Name
               </label>
               <input
                 type="text"
-                placeholder="e.g. Acme Digital Labs LLC"
+                placeholder={bankingPreset.accountHolderPlaceholder}
                 value={accountName}
                 onChange={(e) => setAccountName(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -274,38 +322,50 @@ export default function SettingsPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Routing / ABA Number
+                {bankingPreset.accountLabel}
               </label>
               <input
                 type="text"
-                placeholder="123456789"
-                value={routingNumber}
-                onChange={(e) => setRoutingNumber(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Account Number / IBAN
-              </label>
-              <input
-                type="text"
-                placeholder="987654321012"
+                placeholder={bankingPreset.accountPlaceholder}
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
             </div>
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                SWIFT / BIC Code (Optional for International)
+                {bankingPreset.routingLabel}
               </label>
               <input
                 type="text"
-                placeholder="CHASUS33"
-                value={swiftCode}
-                onChange={(e) => setSwiftCode(e.target.value)}
+                placeholder={bankingPreset.routingPlaceholder}
+                value={routingNumber}
+                onChange={(e) => setRoutingNumber(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                {bankingPreset.swiftLabel}
+              </label>
+              <input
+                type="text"
+                placeholder={bankingPreset.swiftPlaceholder}
+                value={swiftCode}
+                onChange={(e) => setSwiftCode(e.target.value.toUpperCase())}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Additional Settlement Notes (Optional)
+              </label>
+              <textarea
+                rows={2}
+                placeholder={bankingPreset.instructionsPlaceholder}
+                value={bankInstructions}
+                onChange={(e) => setBankInstructions(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
             </div>
           </div>
@@ -328,17 +388,12 @@ export default function SettingsPage() {
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Default Currency
               </label>
-              <select
+              <CurrencySelect
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              >
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="CAD">CAD ($)</option>
-                <option value="AUD">AUD ($)</option>
-              </select>
+                onChange={setCurrency}
+                compact
+                ariaLabel="Default Currency"
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -364,11 +419,11 @@ export default function SettingsPage() {
             </div>
             <div className="md:col-span-3">
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Tax ID / VAT Registration
+                Tax ID / VAT / TIN Registration
               </label>
               <input
                 type="text"
-                placeholder="US-EIN-12-3456789 or GB123456789"
+                placeholder="e.g. VAT, TIN, GST, ABN, or EIN"
                 value={taxId}
                 onChange={(e) => setTaxId(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"

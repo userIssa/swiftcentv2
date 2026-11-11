@@ -19,7 +19,9 @@ import {
 import { QuoteStatusBadge } from '@/components/QuoteStatusBadge';
 import { SendDocumentModal } from '@/components/SendDocumentModal';
 import { DocumentTemplateView } from '@/components/DocumentTemplateView';
+import { CurrencySelect } from '@/components/CurrencySelect';
 import { formatCurrency } from '@/engine/calculator';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 import { QuoteStatus } from '@/models/Quote';
 
 export default function QuoteDetailPage({
@@ -38,8 +40,10 @@ export default function QuoteDetailPage({
   const loadQuote = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/quotes/${id}`);
-      const data = await res.json();
+      const data = await fetchJsonWithBuffer(`/api/quotes/${id}`, {
+        timeoutMs: 15000,
+        retry: true,
+      });
       if (data.success && data.quote) {
         setQuote(data.quote);
       }
@@ -67,6 +71,28 @@ export default function QuoteDetailPage({
         await loadQuote();
       } else {
         alert(data.error);
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCurrencyChange = async (nextCurrency: string) => {
+    if (!quote || nextCurrency === quote.currency) return;
+    try {
+      setActionLoading(true);
+      const res = await fetch(`/api/quotes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currency: nextCurrency, actor: 'admin' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        await loadQuote();
+      } else {
+        alert(data.error || 'Failed to update quote currency');
       }
     } catch (err: any) {
       alert(err.message);
@@ -163,6 +189,18 @@ export default function QuoteDetailPage({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {quote.status === 'draft' && (
+            <div className="w-40">
+              <CurrencySelect
+                compact
+                value={quote.currency || 'USD'}
+                disabled={actionLoading}
+                onChange={handleCurrencyChange}
+                ariaLabel="Draft Quote Currency"
+              />
+            </div>
+          )}
+
           {/* Copy Public Link */}
           <button
             onClick={copyPortalLink}
@@ -271,6 +309,7 @@ export default function QuoteDetailPage({
         documentType="quote"
         documentNumber={quote.quoteNumber}
         amountCents={quote.grandTotalCents}
+        currency={quote.currency}
         clientName={quote.clientSnapshot?.name || quote.clientId?.name || 'Valued Client'}
         clientEmail={quote.clientSnapshot?.email || quote.clientId?.email || ''}
         publicToken={quote.publicAccessToken}

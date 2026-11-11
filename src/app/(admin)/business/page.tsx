@@ -14,10 +14,13 @@ import {
   Edit3,
 } from 'lucide-react';
 import { LogoUploader } from '@/components/LogoUploader';
+import { CurrencySelect } from '@/components/CurrencySelect';
+import { CountrySelect } from '@/components/CountrySelect';
 import { useActiveBusiness } from '@/context/ActiveBusinessContext';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 
 export default function BusinessDirectoryPage() {
-  const { refreshBusinesses } = useActiveBusiness();
+  const { activeBusiness, refreshBusinesses } = useActiveBusiness();
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -63,13 +66,15 @@ export default function BusinessDirectoryPage() {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [postalCode, setPostalCode] = useState('');
-  const [country, setCountry] = useState('USA');
+  const [country, setCountry] = useState('');
 
   const loadOrganizations = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/organizations');
-      const data = await res.json();
+      const data = await fetchJsonWithBuffer('/api/organizations', {
+        timeoutMs: 15000,
+        retry: true,
+      });
       if (data.success && data.organizations) {
         setOrganizations(data.organizations);
       }
@@ -88,7 +93,7 @@ export default function BusinessDirectoryPage() {
     setEditingOrg(null);
     setName('');
     setEmail('');
-    setCurrency('USD');
+    setCurrency(activeBusiness?.currency || 'USD');
     setLogoUrl('');
     setQuotePrefix('QTE');
     setInvoicePrefix('INV');
@@ -97,7 +102,7 @@ export default function BusinessDirectoryPage() {
     setCity('');
     setState('');
     setPostalCode('');
-    setCountry('USA');
+    setCountry('');
     setShowModal(true);
   };
 
@@ -114,7 +119,7 @@ export default function BusinessDirectoryPage() {
     setCity(org.address?.city || '');
     setState(org.address?.state || '');
     setPostalCode(org.address?.postalCode || '');
-    setCountry(org.address?.country || 'USA');
+    setCountry(org.address?.country || '');
     setShowModal(true);
   };
 
@@ -277,7 +282,8 @@ export default function BusinessDirectoryPage() {
                   </div>
                   {org.address?.city && (
                     <div>
-                      Location: {org.address.city}, {org.address.country || 'USA'}
+                      Location: {org.address.city}
+                      {org.address.country ? `, ${org.address.country}` : ''}
                     </div>
                   )}
                 </div>
@@ -345,17 +351,11 @@ export default function BusinessDirectoryPage() {
                   <label className="block text-xs font-medium text-slate-700 mb-1">
                     Default Currency
                   </label>
-                  <select
+                  <CurrencySelect
                     value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    className="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  >
-                    <option value="USD">USD ($) - US Dollar</option>
-                    <option value="EUR">EUR (€) - Euro</option>
-                    <option value="GBP">GBP (£) - British Pound</option>
-                    <option value="CAD">CAD ($) - Canadian Dollar</option>
-                    <option value="AUD">AUD ($) - Australian Dollar</option>
-                  </select>
+                    onChange={setCurrency}
+                    ariaLabel="Business Default Currency"
+                  />
                 </div>
 
                 <div>
@@ -386,11 +386,11 @@ export default function BusinessDirectoryPage() {
 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Tax ID / VAT Registration #
+                    Tax ID / VAT / TIN Registration #
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. US-EIN-12-3456789 or GB999999973"
+                    placeholder="e.g. VAT, TIN, GST, ABN, or EIN"
                     value={taxId}
                     onChange={(e) => setTaxId(e.target.value)}
                     className="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -403,7 +403,7 @@ export default function BusinessDirectoryPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="123 Commerce St"
+                    placeholder="Street and building number"
                     value={street}
                     onChange={(e) => setStreet(e.target.value)}
                     className="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -414,7 +414,7 @@ export default function BusinessDirectoryPage() {
                   <label className="block text-xs font-medium text-slate-700 mb-1">City</label>
                   <input
                     type="text"
-                    placeholder="San Francisco"
+                    placeholder="e.g. Lagos, London, Berlin, Toronto"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     className="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -423,12 +423,10 @@ export default function BusinessDirectoryPage() {
 
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">Country</label>
-                  <input
-                    type="text"
-                    placeholder="USA"
+                  <CountrySelect
                     value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    className="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    onChange={setCountry}
+                    ariaLabel="Business Country"
                   />
                 </div>
               </div>

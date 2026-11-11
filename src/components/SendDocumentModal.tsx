@@ -20,6 +20,7 @@ interface SendDocumentModalProps {
   documentType: 'invoice' | 'quote';
   documentNumber: string;
   amountCents: number;
+  currency?: string;
   clientName: string;
   clientEmail: string;
   publicToken: string;
@@ -35,6 +36,7 @@ export function SendDocumentModal({
   documentType,
   documentNumber,
   amountCents,
+  currency = 'USD',
   clientName,
   clientEmail,
   publicToken,
@@ -166,7 +168,7 @@ export function SendDocumentModal({
                         {isInvoice ? 'Total Due' : 'Estimated Total'}
                       </div>
                       <div className="text-xl font-extrabold text-slate-900 tracking-tight mt-0.5">
-                        {formatCurrency(amountCents)}
+                        {formatCurrency(amountCents, currency)}
                       </div>
                       {dueDate && (
                         <div className="text-[10px] text-slate-400 mt-0.5">

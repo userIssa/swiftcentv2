@@ -1,4 +1,5 @@
 import { Behavior, FunctionDeclaration, Tool, Type } from '@google/genai';
+import { SUPPORTED_CURRENCY_CODES } from '../currencies';
 import { VoiceDocumentType } from './types';
 
 export const GEMINI_LIVE_MODEL = 'gemini-3.8-live';
@@ -70,8 +71,8 @@ export const VOICE_DRAFT_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
         },
         currency: {
           type: Type.STRING,
-          enum: ['USD', 'EUR', 'GBP', 'CAD', 'AUD'],
-          description: 'Preferred billing currency code.',
+          enum: SUPPORTED_CURRENCY_CODES,
+          description: 'Preferred ISO 4217 billing currency code (e.g. NGN, USD, EUR, GBP).',
         },
         taxId: {
           type: Type.STRING,
@@ -137,7 +138,8 @@ export const VOICE_DRAFT_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
         },
         unitPrice: {
           type: Type.NUMBER,
-          description: 'Unit price in major currency units (e.g., dollars: 2500 means $2,500.00). Omit if using catalog default price.',
+          description:
+            'Unit price in major currency units of the document currency (e.g., 2500 means 2,500.00 in the active currency). Omit if using catalog default price.',
         },
         discountType: {
           type: Type.STRING,
@@ -198,8 +200,8 @@ export const VOICE_DRAFT_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
       properties: {
         currency: {
           type: Type.STRING,
-          enum: ['USD', 'EUR', 'GBP', 'CAD', 'AUD'],
-          description: 'ISO currency code.',
+          enum: SUPPORTED_CURRENCY_CODES,
+          description: 'ISO 4217 currency code for this specific quote/invoice (e.g. NGN, USD, EUR, GBP).',
         },
         issueDate: {
           type: Type.STRING,

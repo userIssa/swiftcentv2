@@ -5,6 +5,7 @@ import { GoogleGenAI, LiveServerMessage, Session } from '@google/genai';
 import { VoiceAudioEngine } from './audio-io';
 import { executeVoiceToolCall } from './tool-executor';
 import { GEMINI_LIVE_MODEL } from './tool-declarations';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 import {
   VoiceConnectionState,
   VoiceDocumentDraft,
@@ -18,6 +19,7 @@ const AUTO_END_FALLBACK_MS = 7000;
 const AUTO_END_POST_PLAYBACK_MS = 220;
 const AUTO_END_SILENT_GRACE_MS = 1800;
 const MAX_TEXT_MESSAGE_CHARS = 500;
+const LIVE_CONNECT_TIMEOUT_MS = 18000;
 const MAX_RECONNECT_ATTEMPTS = 3;
 
 export interface UseVoiceDraftSessionOptions {
@@ -261,17 +263,18 @@ export function useVoiceDraftSession({
   }, [endSessionWithReason]);
 
   const fetchToken = useCallback(async (): Promise<{ token: string; model: string; expireAtMs: number }> => {
-    const res = await fetch('/api/voice/session', {
+    const data: VoiceSessionTokenResponse = await fetchJsonWithBuffer('/api/voice/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         organizationId: draftRef.current.organizationId,
         documentType: draftRef.current.documentType,
       }),
+      timeoutMs: 20000,
+      retry: true,
     });
 
-    const data: VoiceSessionTokenResponse = await res.json();
-    if (!res.ok || !data.success || !data.token) {
+    if (!data.success || !data.token) {
       const err = new Error(data.error || 'Failed to provision voice session');
       (err as any).code = data.code || 'SESSION_ERROR';
       throw err;
@@ -408,7 +411,8 @@ export function useVoiceDraftSession({
         }
       };
 
-      const session = await ai.live.connect({
+      let timedOut = false;
+      const connectPromise = ai.live.connect({
         model: tokenBundle.model,
         config: {
           sessionResumption: resumeHandleRef.current
@@ -453,6 +457,23 @@ export function useVoiceDraftSession({
           },
         },
       });
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          timedOut = true;
+          reject(new Error('Voice connection timed out after 18s. Please tap the orb to retry.'));
+        }, LIVE_CONNECT_TIMEOUT_MS);
+      });
+
+      const session = await Promise.race([connectPromise, timeoutPromise]);
+      if (timedOut) {
+        try {
+          session.close();
+        } catch {
+          // ignore
+        }
+        return;
+      }
 
       sessionRef.current = session;
     },

@@ -6,6 +6,7 @@ import { Client } from '../models/Client';
 import { IQuote, IQuoteItem, Quote } from '../models/Quote';
 import { Invoice } from '../models/Invoice';
 import { calculateInvoice } from '../engine/calculator';
+import { normalizeCurrencyCode } from '../lib/currencies';
 import { RawLineItem } from '../types/financial';
 
 export interface CreateQuoteInput {
@@ -102,7 +103,10 @@ export class QuoteService {
       status: 'draft',
       issueDate: input.issueDate ? new Date(input.issueDate) : new Date(),
       validUntil: new Date(input.validUntil),
-      currency: input.currency || client.currency || org.currency || 'USD',
+      currency: normalizeCurrencyCode(
+        input.currency,
+        normalizeCurrencyCode(org.currency, client.currency || 'USD')
+      ),
       publicAccessToken,
       organizationSnapshot,
       clientSnapshot,
@@ -123,6 +127,48 @@ export class QuoteService {
           notes: `Created proposal ${quoteNumber}`,
         },
       ],
+    });
+
+    await quote.save();
+    return quote;
+  }
+
+  static async updateDraft(
+    quoteId: string,
+    updates: {
+      currency?: string;
+      validUntil?: Date | string;
+      notes?: string;
+      terms?: string;
+    },
+    actor: string = 'system'
+  ): Promise<IQuote> {
+    await connectToDatabase();
+    const quote = await Quote.findById(quoteId);
+    if (!quote) throw new Error('Quote not found');
+
+    if (quote.status !== 'draft') {
+      throw new Error(
+        `Cannot edit quote in '${quote.status}' status. Only draft quotes can be modified.`
+      );
+    }
+
+    if (updates.currency !== undefined) {
+      quote.currency = normalizeCurrencyCode(updates.currency, quote.currency || 'USD');
+    }
+    if (updates.validUntil) {
+      quote.validUntil = new Date(updates.validUntil);
+    }
+    if (updates.notes !== undefined) quote.notes = updates.notes;
+    if (updates.terms !== undefined) quote.terms = updates.terms;
+
+    quote.activityLog.push({
+      action: 'Quote updated',
+      fromStatus: quote.status,
+      toStatus: quote.status,
+      timestamp: new Date(),
+      actor,
+      notes: updates.currency ? `Updated currency to ${quote.currency}` : 'Draft updated',
     });
 
     await quote.save();
@@ -235,7 +281,10 @@ export class QuoteService {
       dueDate,
       currency: quote.currency,
       publicAccessToken: invoicePublicToken,
-      organizationSnapshot: quote.organizationSnapshot,
+      organizationSnapshot: {
+        ...quote.organizationSnapshot,
+        wireInstructions: org.wireInstructions,
+      },
       clientSnapshot: quote.clientSnapshot,
       items: quote.items,
       subtotalCents: quote.subtotalCents,

@@ -32,18 +32,23 @@ if (!cached) {
 }
 
 export async function connectToDatabase(): Promise<typeof mongoose> {
-  if (cached!.conn) {
+  if (cached!.conn && mongoose.connection.readyState === 1) {
     return cached!.conn;
+  }
+
+  if (cached!.conn && mongoose.connection.readyState !== 1) {
+    cached!.conn = null;
+    cached!.promise = null;
   }
 
   if (!cached!.promise) {
     const uri = resolveMongoUri();
     cached!.promise = mongoose.connect(uri, {
       bufferCommands: false,
-      // Fail before serverless gateways (e.g. Netlify 10s-26s) time out with HTML 504 errors
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 5000,
-      socketTimeoutMS: 15000,
+      // Give cold-start DNS/TLS/Atlas M0 sufficient time while failing before gateway 504s
+      serverSelectionTimeoutMS: 8500,
+      connectTimeoutMS: 8500,
+      socketTimeoutMS: 20000,
       maxPoolSize: 10,
     }).then((mongooseInstance) => {
       return mongooseInstance;

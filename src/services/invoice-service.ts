@@ -6,6 +6,7 @@ import { Client } from '../models/Client';
 import { IInvoice, IInvoiceItem, Invoice } from '../models/Invoice';
 import { Payment } from '../models/Payment';
 import { calculateInvoice } from '../engine/calculator';
+import { normalizeCurrencyCode } from '../lib/currencies';
 import {
   canTransition,
   createAuditEvent,
@@ -79,6 +80,7 @@ export class InvoiceService {
       taxId: org.taxId,
       address: org.address,
       branding: org.branding,
+      wireInstructions: org.wireInstructions,
     };
 
     const clientSnapshot = {
@@ -121,7 +123,10 @@ export class InvoiceService {
       status: 'draft',
       issueDate: input.issueDate ? new Date(input.issueDate) : new Date(),
       dueDate: new Date(input.dueDate),
-      currency: input.currency || client.currency || org.currency || 'USD',
+      currency: normalizeCurrencyCode(
+        input.currency,
+        normalizeCurrencyCode(org.currency, client.currency || 'USD')
+      ),
       publicAccessToken,
       organizationSnapshot,
       clientSnapshot,
@@ -147,6 +152,7 @@ export class InvoiceService {
   static async updateDraft(
     invoiceId: string,
     updates: {
+      currency?: string;
       items?: RawLineItem[];
       dueDate?: Date | string;
       notes?: string;
@@ -165,6 +171,9 @@ export class InvoiceService {
       );
     }
 
+    if (updates.currency !== undefined) {
+      invoice.currency = normalizeCurrencyCode(updates.currency, invoice.currency || 'USD');
+    }
     if (updates.dueDate) {
       invoice.dueDate = new Date(updates.dueDate);
     }
@@ -236,22 +245,32 @@ export class InvoiceService {
 
     const invoice = await Invoice.findOne({ publicAccessToken: token }).populate(
       'organizationId',
-      'name email branding'
+      'name email branding wireInstructions'
     );
     if (!invoice) throw new Error('Invoice not found or invalid link');
 
-    // Resilient fallback for branding if snapshot was recorded before logo upload
+    // Resilient fallback for branding & bank settlement details if snapshot predates configuration
+    const populatedOrg = invoice.organizationId as any;
     if (
-      (!invoice.organizationSnapshot?.branding?.logoUrl &&
-        (invoice.organizationId as any)?.branding?.logoUrl) ||
-      (!invoice.organizationSnapshot?.email && (invoice.organizationId as any)?.email)
+      (!invoice.organizationSnapshot?.branding?.logoUrl && populatedOrg?.branding?.logoUrl) ||
+      (!invoice.organizationSnapshot?.email && populatedOrg?.email) ||
+      (!invoice.organizationSnapshot?.wireInstructions?.bankName &&
+        !invoice.organizationSnapshot?.wireInstructions?.accountNumber &&
+        populatedOrg?.wireInstructions)
     ) {
       if (!invoice.organizationSnapshot.branding) invoice.organizationSnapshot.branding = {};
       if (!invoice.organizationSnapshot.branding.logoUrl) {
-        invoice.organizationSnapshot.branding.logoUrl = (invoice.organizationId as any).branding?.logoUrl;
+        invoice.organizationSnapshot.branding.logoUrl = populatedOrg?.branding?.logoUrl;
       }
       if (!invoice.organizationSnapshot.email) {
-        invoice.organizationSnapshot.email = (invoice.organizationId as any).email;
+        invoice.organizationSnapshot.email = populatedOrg?.email;
+      }
+      if (
+        !invoice.organizationSnapshot.wireInstructions?.bankName &&
+        !invoice.organizationSnapshot.wireInstructions?.accountNumber &&
+        populatedOrg?.wireInstructions
+      ) {
+        invoice.organizationSnapshot.wireInstructions = populatedOrg.wireInstructions;
       }
     }
 

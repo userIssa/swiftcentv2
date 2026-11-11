@@ -7,14 +7,15 @@ import {
   Search,
   Edit2,
   Trash2,
-  DollarSign,
   Percent,
   CheckCircle2,
   X,
   Layers,
 } from 'lucide-react';
 import { formatCurrency } from '@/engine/calculator';
+import { getCurrencySymbol } from '@/lib/currencies';
 import { useActiveBusiness } from '@/context/ActiveBusinessContext';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 
 interface ProductItem {
   _id: string;
@@ -26,7 +27,7 @@ interface ProductItem {
 }
 
 export default function ProductsPage() {
-  const { activeBusiness } = useActiveBusiness();
+  const { activeBusiness, loading: businessLoading } = useActiveBusiness();
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,8 +48,7 @@ export default function ProductsPage() {
       const url = activeBusiness?._id
         ? `/api/products?organizationId=${activeBusiness._id}`
         : '/api/products';
-      const res = await fetch(url);
-      const data = await res.json();
+      const data = await fetchJsonWithBuffer(url, { timeoutMs: 15000, retry: true });
       if (data.success && data.products) {
         setProducts(data.products);
       } else {
@@ -62,8 +62,12 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
+    if (businessLoading) {
+      setLoading(true);
+      return;
+    }
     loadProducts();
-  }, [activeBusiness?._id]);
+  }, [activeBusiness?._id, businessLoading]);
 
   const handleOpenCreate = () => {
     setEditingProduct(null);
@@ -335,7 +339,9 @@ export default function ProductsPage() {
                     Default Unit Price ({activeBusiness?.currency || 'USD'}) *
                   </label>
                   <div className="relative">
-                    <DollarSign className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <span className="text-[11px] font-bold text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                      {getCurrencySymbol(activeBusiness?.currency || 'USD')}
+                    </span>
                     <input
                       type="number"
                       step="0.01"
@@ -343,7 +349,7 @@ export default function ProductsPage() {
                       placeholder="0.00"
                       value={unitPrice}
                       onChange={(e) => setUnitPrice(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     />
                   </div>
                 </div>

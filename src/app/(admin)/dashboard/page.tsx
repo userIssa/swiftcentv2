@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import {
-  DollarSign,
   Clock,
   CheckCircle2,
   AlertCircle,
@@ -25,6 +24,8 @@ import { InvoiceStatus } from '@/engine/state-machine';
 import { useActiveBusiness } from '@/context/ActiveBusinessContext';
 import { useAuth } from '@/context/AuthContext';
 import { clearSampleWorkspaceData, loadSampleWorkspaceData } from '@/lib/sample-data-client';
+import { getCurrencySymbol } from '@/lib/currencies';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 
 interface DashboardStats {
   totalInvoicedCents: number;
@@ -34,7 +35,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-  const { activeBusiness } = useActiveBusiness();
+  const { activeBusiness, loading: businessLoading } = useActiveBusiness();
   const { user } = useAuth();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,8 +67,7 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       const url = orgId && orgId !== 'all' ? `/api/invoices?organizationId=${orgId}` : '/api/invoices';
-      const res = await fetch(url);
-      const data = await res.json();
+      const data = await fetchJsonWithBuffer(url, { timeoutMs: 15000, retry: true });
       if (data.success && data.invoices) {
         setInvoices(data.invoices);
         calculateStats(data.invoices);
@@ -136,8 +136,12 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    if (businessLoading) {
+      setLoading(true);
+      return;
+    }
     fetchData(activeBusiness?._id);
-  }, [activeBusiness?._id]);
+  }, [activeBusiness?._id, businessLoading]);
 
   const filteredInvoices = invoices.filter((inv) => {
     if (!searchTerm) return true;
@@ -295,12 +299,12 @@ export default function DashboardPage() {
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Total Invoiced
             </span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <DollarSign className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+              {getCurrencySymbol(activeBusiness?.currency || 'USD')}
             </div>
           </div>
           <div className="mt-3 text-2xl font-bold text-slate-900 tracking-tight">
-            {formatCurrency(stats.totalInvoicedCents)}
+            {formatCurrency(stats.totalInvoicedCents, activeBusiness?.currency || 'USD')}
           </div>
           <p className="mt-1 text-xs text-slate-400 font-medium">All issued invoices</p>
         </div>
@@ -316,7 +320,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mt-3 text-2xl font-bold text-emerald-600 tracking-tight">
-            {formatCurrency(stats.totalCollectedCents)}
+            {formatCurrency(stats.totalCollectedCents, activeBusiness?.currency || 'USD')}
           </div>
           <p className="mt-1 text-xs text-slate-400 font-medium">Cleared client payments</p>
         </div>
@@ -332,7 +336,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mt-3 text-2xl font-bold text-amber-600 tracking-tight">
-            {formatCurrency(stats.outstandingCents)}
+            {formatCurrency(stats.outstandingCents, activeBusiness?.currency || 'USD')}
           </div>
           <p className="mt-1 text-xs text-slate-400 font-medium">Awaiting payment / in flight</p>
         </div>

@@ -17,6 +17,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { formatCurrency } from '@/engine/calculator';
 import { InvoiceStatus } from '@/engine/state-machine';
 import { useActiveBusiness } from '@/context/ActiveBusinessContext';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 
 const TABS = [
   { id: 'all', label: 'All Invoices' },
@@ -29,7 +30,7 @@ const TABS = [
 ];
 
 export default function InvoicesListPage() {
-  const { activeBusiness } = useActiveBusiness();
+  const { activeBusiness, loading: businessLoading } = useActiveBusiness();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('all');
@@ -46,8 +47,7 @@ export default function InvoicesListPage() {
       }
       const qs = params.toString();
       const url = qs ? `/api/invoices?${qs}` : '/api/invoices';
-      const res = await fetch(url);
-      const data = await res.json();
+      const data = await fetchJsonWithBuffer(url, { timeoutMs: 15000, retry: true });
       if (data.success && data.invoices) {
         setInvoices(data.invoices);
       }
@@ -59,8 +59,12 @@ export default function InvoicesListPage() {
   };
 
   useEffect(() => {
+    if (businessLoading) {
+      setLoading(true);
+      return;
+    }
     loadInvoices(selectedTab, businessFilter);
-  }, [selectedTab, businessFilter, activeBusiness?._id]);
+  }, [selectedTab, businessFilter, activeBusiness?._id, businessLoading]);
 
   const handleDeleteInvoice = async (invoiceId: string, invoiceNumber: string) => {
     if (!confirm(`Are you sure you want to permanently delete Invoice ${invoiceNumber}?`)) {

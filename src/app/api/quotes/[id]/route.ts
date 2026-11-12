@@ -12,6 +12,7 @@ export async function GET(
     const { id } = await params;
     const quote = await Quote.findById(id)
       .populate('clientId', 'name email phone')
+      .populate('organizationId', 'name email phone website tagline branding wireInstructions')
       .populate('convertedInvoiceId', 'invoiceNumber');
     if (!quote) {
       return NextResponse.json({ success: false, error: 'Quote not found' }, { status: 404 });

@@ -1,8 +1,12 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
+import type { CustomTemplateConfig } from '../lib/custom-template';
 
 export interface IOrganization extends Document {
   name: string;
   email: string;
+  phone?: string;
+  website?: string;
+  tagline?: string;
   ownerId?: mongoose.Types.ObjectId | string;
   currency: string;
   invoicePrefix: string;
@@ -20,6 +24,7 @@ export interface IOrganization extends Document {
   branding?: {
     logoUrl?: string;
     primaryColor?: string;
+    customTemplate?: CustomTemplateConfig | null;
   };
   paymentGateways?: {
     stripeEnabled?: boolean;
@@ -44,6 +49,9 @@ const OrganizationSchema = new Schema<IOrganization>(
   {
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, trim: true, lowercase: true },
+    phone: { type: String, trim: true },
+    website: { type: String, trim: true },
+    tagline: { type: String, trim: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
     currency: { type: String, default: 'USD', uppercase: true },
     invoicePrefix: { type: String, default: 'INV', trim: true },
@@ -61,6 +69,7 @@ const OrganizationSchema = new Schema<IOrganization>(
     branding: {
       logoUrl: String,
       primaryColor: { type: String, default: '#2563eb' },
+      customTemplate: { type: Schema.Types.Mixed, default: undefined },
     },
     paymentGateways: {
       stripeEnabled: { type: Boolean, default: false },
@@ -85,7 +94,9 @@ export const Organization: Model<IOrganization> =
   (mongoose.models &&
   mongoose.models.Organization &&
   mongoose.models.Organization.schema.paths.ownerId &&
-  mongoose.models.Organization.schema.paths['wireInstructions.bankRegion']
+  mongoose.models.Organization.schema.paths.phone &&
+  mongoose.models.Organization.schema.paths['wireInstructions.bankRegion'] &&
+  mongoose.models.Organization.schema.paths['branding.customTemplate']
     ? mongoose.models.Organization
     : null) ||
   (() => {

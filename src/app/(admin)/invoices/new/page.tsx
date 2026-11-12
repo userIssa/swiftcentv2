@@ -211,13 +211,13 @@ export default function NewInvoicePage() {
         terms,
       };
 
-      const res = await fetch('/api/invoices', {
+      const data = await fetchJsonWithBuffer('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        timeoutMs: 20000,
       });
 
-      const data = await res.json();
       if (!data.success) {
         throw new Error(data.error || 'Failed to create invoice');
       }
@@ -225,11 +225,15 @@ export default function NewInvoicePage() {
       const createdInvoiceId = data.invoice._id;
 
       if (autoSend) {
-        await fetch(`/api/invoices/${createdInvoiceId}/send`, {
+        const sendData = await fetchJsonWithBuffer(`/api/invoices/${createdInvoiceId}/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ actor: 'admin' }),
+          timeoutMs: 15000,
         });
+        if (!sendData.success) {
+          throw new Error(sendData.error || 'Invoice created, but failed to send');
+        }
       }
 
       router.push(`/invoices/${createdInvoiceId}`);

@@ -3,11 +3,15 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { fetchJsonWithBuffer } from '@/lib/api-fetch';
+import type { CustomTemplateConfig } from '@/lib/custom-template';
 
 export interface BusinessProfile {
   _id: string;
   name: string;
   email: string;
+  phone?: string;
+  website?: string;
+  tagline?: string;
   currency: string;
   quotePrefix?: string;
   invoicePrefix?: string;
@@ -22,6 +26,7 @@ export interface BusinessProfile {
   branding?: {
     logoUrl?: string;
     primaryColor?: string;
+    customTemplate?: CustomTemplateConfig | null;
   };
 }
 

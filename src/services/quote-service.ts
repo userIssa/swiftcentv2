@@ -67,6 +67,9 @@ export class QuoteService {
     const organizationSnapshot = {
       name: org.name || 'SwiftCent Merchant',
       email: org.email || 'billing@swiftcent.dev',
+      phone: org.phone,
+      website: org.website,
+      tagline: org.tagline,
       taxId: org.taxId,
       address: org.address,
       branding: org.branding,
@@ -197,8 +200,37 @@ export class QuoteService {
 
   static async getByPublicToken(token: string): Promise<IQuote> {
     await connectToDatabase();
-    const quote = await Quote.findOne({ publicAccessToken: token });
+    const quote = await Quote.findOne({ publicAccessToken: token }).populate(
+      'organizationId',
+      'name email phone website tagline branding'
+    );
     if (!quote) throw new Error('Quote not found or invalid link');
+
+    const populatedOrg = quote.organizationId as any;
+    if (
+      (!quote.organizationSnapshot?.branding?.logoUrl && populatedOrg?.branding?.logoUrl) ||
+      (!quote.organizationSnapshot?.branding?.customTemplate && populatedOrg?.branding?.customTemplate) ||
+      (!quote.organizationSnapshot?.phone && populatedOrg?.phone) ||
+      (!quote.organizationSnapshot?.website && populatedOrg?.website) ||
+      (!quote.organizationSnapshot?.tagline && populatedOrg?.tagline)
+    ) {
+      if (!quote.organizationSnapshot.branding) quote.organizationSnapshot.branding = {};
+      if (!quote.organizationSnapshot.branding.logoUrl && populatedOrg?.branding?.logoUrl) {
+        quote.organizationSnapshot.branding.logoUrl = populatedOrg.branding.logoUrl;
+      }
+      if (!quote.organizationSnapshot.branding.customTemplate && populatedOrg?.branding?.customTemplate) {
+        quote.organizationSnapshot.branding.customTemplate = populatedOrg.branding.customTemplate;
+      }
+      if (!quote.organizationSnapshot.phone && populatedOrg?.phone) {
+        quote.organizationSnapshot.phone = populatedOrg.phone;
+      }
+      if (!quote.organizationSnapshot.website && populatedOrg?.website) {
+        quote.organizationSnapshot.website = populatedOrg.website;
+      }
+      if (!quote.organizationSnapshot.tagline && populatedOrg?.tagline) {
+        quote.organizationSnapshot.tagline = populatedOrg.tagline;
+      }
+    }
 
     if (quote.status === 'sent') {
       quote.status = 'viewed';

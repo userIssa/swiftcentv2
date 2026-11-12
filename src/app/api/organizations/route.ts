@@ -77,6 +77,9 @@ export async function POST(request: Request) {
     const org = new Organization({
       name: body.name.trim(),
       email: body.email.trim(),
+      phone: typeof body.phone === 'string' ? body.phone.trim() : undefined,
+      website: typeof body.website === 'string' ? body.website.trim() : undefined,
+      tagline: typeof body.tagline === 'string' ? body.tagline.trim() : undefined,
       ownerId: session.userId,
       currency: normalizeCurrencyCode(body.currency, 'USD'),
       invoicePrefix: body.invoicePrefix || 'INV',

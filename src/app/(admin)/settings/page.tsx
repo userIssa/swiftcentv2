@@ -7,6 +7,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { CurrencySelect } from '@/components/CurrencySelect';
 import { SearchableCombobox } from '@/components/SearchableCombobox';
 import { ThemeTogglePill } from '@/components/ThemeTogglePill';
+import { CustomTemplateStudio } from '@/components/CustomTemplateStudio';
 import {
   BANKING_REGION_PRESETS,
   getBankingPreset,
@@ -478,6 +479,9 @@ export default function SettingsPage() {
           </button>
         </div>
       </form>
+
+      {/* AI Custom Invoice & Quote Template Recreator */}
+      <CustomTemplateStudio />
 
       {user?.canLoadSampleData && (
         <div className="bg-slate-900 rounded-3xl p-6 text-white border border-slate-800 shadow-lg space-y-3">

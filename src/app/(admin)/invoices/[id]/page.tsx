@@ -338,7 +338,12 @@ export default function InvoiceDetailPage({
       </div>
 
       {/* Invoice Document with Live Template & Accent Switcher */}
-      <DocumentTemplateView doc={invoice} type="invoice" showControls={true} />
+      <DocumentTemplateView
+        doc={invoice}
+        type="invoice"
+        showControls={true}
+        allowCustomUpload={true}
+      />
 
       {/* Immutable Audit Log Section - hidden in print */}
       <div className="no-print bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">

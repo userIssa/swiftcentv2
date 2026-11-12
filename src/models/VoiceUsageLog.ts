@@ -5,7 +5,7 @@ export type VoiceUsageStatus = 'provisioned' | 'active' | 'ended';
 export interface IVoiceUsageLog extends Document {
   userId: mongoose.Types.ObjectId;
   organizationId: mongoose.Types.ObjectId;
-  documentType: 'invoice' | 'quote';
+  documentType: 'invoice' | 'quote' | 'template';
   modelName: string;
   status: VoiceUsageStatus;
   startedAt: Date;
@@ -31,7 +31,7 @@ const VoiceUsageLogSchema = new Schema<IVoiceUsageLog>(
       required: true,
       index: true,
     },
-    documentType: { type: String, enum: ['invoice', 'quote'], default: 'quote' },
+    documentType: { type: String, enum: ['invoice', 'quote', 'template'], default: 'quote' },
     modelName: { type: String, required: true, trim: true },
     status: {
       type: String,
@@ -55,7 +55,18 @@ const VoiceUsageLogSchema = new Schema<IVoiceUsageLog>(
 
 VoiceUsageLogSchema.index({ createdAt: -1 });
 
+const docTypePath = mongoose.models?.VoiceUsageLog?.schema?.path('documentType') as any;
+const hasTemplateEnum =
+  Array.isArray(docTypePath?.enumValues) && docTypePath.enumValues.includes('template');
+
 export const VoiceUsageLog: Model<IVoiceUsageLog> =
-  mongoose.models.VoiceUsageLog ||
-  mongoose.model<IVoiceUsageLog>('VoiceUsageLog', VoiceUsageLogSchema);
+  (mongoose.models && mongoose.models.VoiceUsageLog && hasTemplateEnum
+    ? mongoose.models.VoiceUsageLog
+    : null) ||
+  (() => {
+    if (mongoose.models && mongoose.models.VoiceUsageLog) {
+      delete mongoose.models.VoiceUsageLog;
+    }
+    return mongoose.model<IVoiceUsageLog>('VoiceUsageLog', VoiceUsageLogSchema);
+  })();
 

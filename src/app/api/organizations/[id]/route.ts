@@ -7,6 +7,7 @@ import { Client } from '@/models/Client';
 import { Payment } from '@/models/Payment';
 import { getSessionUser } from '@/lib/auth';
 import { normalizeCurrencyCode } from '@/lib/currencies';
+import { normalizeCustomTemplateConfig } from '@/lib/custom-template';
 
 export async function GET(
   request: Request,
@@ -69,6 +70,35 @@ export async function PATCH(
     }
     if (body.primaryColor !== undefined || body.branding?.primaryColor !== undefined) {
       updateData['branding.primaryColor'] = body.primaryColor !== undefined ? body.primaryColor : body.branding?.primaryColor;
+      delete updateData.primaryColor;
+    }
+    if (body.customTemplate !== undefined || body.branding?.customTemplate !== undefined) {
+      const rawCustomTemplate =
+        body.customTemplate !== undefined ? body.customTemplate : body.branding?.customTemplate;
+      updateData['branding.customTemplate'] =
+        rawCustomTemplate === null ? null : normalizeCustomTemplateConfig(rawCustomTemplate);
+      delete updateData.customTemplate;
+    }
+    if (updateData.branding && typeof updateData.branding === 'object') {
+      if (updateData.branding.logoUrl !== undefined && updateData['branding.logoUrl'] === undefined) {
+        updateData['branding.logoUrl'] = updateData.branding.logoUrl;
+      }
+      if (
+        updateData.branding.primaryColor !== undefined &&
+        updateData['branding.primaryColor'] === undefined
+      ) {
+        updateData['branding.primaryColor'] = updateData.branding.primaryColor;
+      }
+      if (
+        updateData.branding.customTemplate !== undefined &&
+        updateData['branding.customTemplate'] === undefined
+      ) {
+        updateData['branding.customTemplate'] =
+          updateData.branding.customTemplate === null
+            ? null
+            : normalizeCustomTemplateConfig(updateData.branding.customTemplate);
+      }
+      delete updateData.branding;
     }
 
     const organization = await Organization.findByIdAndUpdate(

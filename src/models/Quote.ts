@@ -1,4 +1,5 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
+import type { CustomTemplateConfig } from '../lib/custom-template';
 
 export type QuoteStatus =
   | 'draft'
@@ -52,6 +53,9 @@ export interface IQuote extends Document {
   organizationSnapshot: {
     name: string;
     email: string;
+    phone?: string;
+    website?: string;
+    tagline?: string;
     taxId?: string;
     address?: {
       street?: string;
@@ -63,6 +67,7 @@ export interface IQuote extends Document {
     branding?: {
       logoUrl?: string;
       primaryColor?: string;
+      customTemplate?: CustomTemplateConfig | null;
     };
   };
 
@@ -153,6 +158,9 @@ const QuoteSchema = new Schema<IQuote>(
     organizationSnapshot: {
       name: { type: String, required: true },
       email: { type: String, required: true },
+      phone: String,
+      website: String,
+      tagline: String,
       taxId: String,
       address: {
         street: String,
@@ -164,6 +172,7 @@ const QuoteSchema = new Schema<IQuote>(
       branding: {
         logoUrl: String,
         primaryColor: String,
+        customTemplate: { type: Schema.Types.Mixed, default: undefined },
       },
     },
 
@@ -200,5 +209,16 @@ const QuoteSchema = new Schema<IQuote>(
 QuoteSchema.index({ organizationId: 1, quoteNumber: 1 }, { unique: true });
 
 export const Quote: Model<IQuote> =
-  mongoose.models.Quote || mongoose.model<IQuote>('Quote', QuoteSchema);
+  (mongoose.models &&
+  mongoose.models.Quote &&
+  mongoose.models.Quote.schema.paths['organizationSnapshot.phone'] &&
+  mongoose.models.Quote.schema.paths['organizationSnapshot.branding.customTemplate']
+    ? mongoose.models.Quote
+    : null) ||
+  (() => {
+    if (mongoose.models && mongoose.models.Quote) {
+      delete mongoose.models.Quote;
+    }
+    return mongoose.model<IQuote>('Quote', QuoteSchema);
+  })();
 

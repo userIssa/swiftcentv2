@@ -224,7 +224,24 @@
   }
 }
 
-/* Print styling for crisp PDF and paper invoices */
+/* Print styling & curated template font tokens */
+:root {
+  --sc-font-sans: 'Inter', 'SF Pro Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --sc-font-geometric: 'Plus Jakarta Sans', 'Avenir Next', 'Montserrat', 'Trebuchet MS', sans-serif;
+  --sc-font-editorial: 'Playfair Display', 'Baskerville', 'Georgia', 'Times New Roman', serif;
+  --sc-font-condensed: 'DIN Condensed', 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+  --sc-font-mono: 'JetBrains Mono', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
+}
+
+.sc-sheet-frame {
+  width: 100%;
+  max-width: 794px;
+  min-height: 980px;
+  margin-left: auto;
+  margin-right: auto;
+  background: #ffffff;
+}
+
 @media print {
   body {
     background: white !important;
@@ -236,12 +253,14 @@
   .print-only {
     display: block !important;
   }
-  .print-page {
+  .print-page,
+  .sc-sheet-frame {
     box-shadow: none !important;
     border: none !important;
     padding: 0 !important;
     margin: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
+    min-height: auto !important;
   }
 }

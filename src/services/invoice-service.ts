@@ -77,6 +77,9 @@ export class InvoiceService {
     const organizationSnapshot = {
       name: org.name || 'SwiftCent Merchant',
       email: org.email || 'billing@swiftcent.dev',
+      phone: org.phone,
+      website: org.website,
+      tagline: org.tagline,
       taxId: org.taxId,
       address: org.address,
       branding: org.branding,
@@ -245,7 +248,7 @@ export class InvoiceService {
 
     const invoice = await Invoice.findOne({ publicAccessToken: token }).populate(
       'organizationId',
-      'name email branding wireInstructions'
+      'name email phone website tagline branding wireInstructions'
     );
     if (!invoice) throw new Error('Invoice not found or invalid link');
 
@@ -253,6 +256,8 @@ export class InvoiceService {
     const populatedOrg = invoice.organizationId as any;
     if (
       (!invoice.organizationSnapshot?.branding?.logoUrl && populatedOrg?.branding?.logoUrl) ||
+      (!invoice.organizationSnapshot?.branding?.customTemplate &&
+        populatedOrg?.branding?.customTemplate) ||
       (!invoice.organizationSnapshot?.email && populatedOrg?.email) ||
       (!invoice.organizationSnapshot?.wireInstructions?.bankName &&
         !invoice.organizationSnapshot?.wireInstructions?.accountNumber &&
@@ -262,8 +267,20 @@ export class InvoiceService {
       if (!invoice.organizationSnapshot.branding.logoUrl) {
         invoice.organizationSnapshot.branding.logoUrl = populatedOrg?.branding?.logoUrl;
       }
+      if (!invoice.organizationSnapshot.branding.customTemplate && populatedOrg?.branding?.customTemplate) {
+        invoice.organizationSnapshot.branding.customTemplate = populatedOrg.branding.customTemplate;
+      }
       if (!invoice.organizationSnapshot.email) {
         invoice.organizationSnapshot.email = populatedOrg?.email;
+      }
+      if (!invoice.organizationSnapshot.phone && populatedOrg?.phone) {
+        invoice.organizationSnapshot.phone = populatedOrg.phone;
+      }
+      if (!invoice.organizationSnapshot.website && populatedOrg?.website) {
+        invoice.organizationSnapshot.website = populatedOrg.website;
+      }
+      if (!invoice.organizationSnapshot.tagline && populatedOrg?.tagline) {
+        invoice.organizationSnapshot.tagline = populatedOrg.tagline;
       }
       if (
         !invoice.organizationSnapshot.wireInstructions?.bankName &&

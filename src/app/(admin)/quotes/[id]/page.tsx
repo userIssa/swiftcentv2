@@ -274,7 +274,12 @@ export default function QuoteDetailPage({
       </div>
 
       {/* Quote Document with Live Template & Accent Switcher */}
-      <DocumentTemplateView doc={quote} type="quote" showControls={true} />
+      <DocumentTemplateView
+        doc={quote}
+        type="quote"
+        showControls={true}
+        allowCustomUpload={true}
+      />
 
       {/* Audit Log Timeline */}
       <div className="no-print bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">

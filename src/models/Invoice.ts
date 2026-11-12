@@ -1,5 +1,6 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
 import { InvoiceStatus } from '../engine/state-machine';
+import type { CustomTemplateConfig } from '../lib/custom-template';
 
 export interface IInvoiceItem {
   id?: string;
@@ -45,6 +46,9 @@ export interface IInvoice extends Document {
   organizationSnapshot: {
     name: string;
     email: string;
+    phone?: string;
+    website?: string;
+    tagline?: string;
     taxId?: string;
     address?: {
       street?: string;
@@ -56,6 +60,7 @@ export interface IInvoice extends Document {
     branding?: {
       logoUrl?: string;
       primaryColor?: string;
+      customTemplate?: CustomTemplateConfig | null;
     };
     wireInstructions?: {
       bankRegion?: string;
@@ -156,6 +161,9 @@ const InvoiceSchema = new Schema<IInvoice>(
     organizationSnapshot: {
       name: { type: String, required: true },
       email: { type: String, required: true },
+      phone: String,
+      website: String,
+      tagline: String,
       taxId: String,
       address: {
         street: String,
@@ -167,6 +175,7 @@ const InvoiceSchema = new Schema<IInvoice>(
       branding: {
         logoUrl: String,
         primaryColor: String,
+        customTemplate: { type: Schema.Types.Mixed, default: undefined },
       },
       wireInstructions: {
         bankRegion: String,
@@ -212,5 +221,16 @@ const InvoiceSchema = new Schema<IInvoice>(
 InvoiceSchema.index({ organizationId: 1, invoiceNumber: 1 }, { unique: true });
 
 export const Invoice: Model<IInvoice> =
-  mongoose.models.Invoice || mongoose.model<IInvoice>('Invoice', InvoiceSchema);
+  (mongoose.models &&
+  mongoose.models.Invoice &&
+  mongoose.models.Invoice.schema.paths['organizationSnapshot.phone'] &&
+  mongoose.models.Invoice.schema.paths['organizationSnapshot.branding.customTemplate']
+    ? mongoose.models.Invoice
+    : null) ||
+  (() => {
+    if (mongoose.models && mongoose.models.Invoice) {
+      delete mongoose.models.Invoice;
+    }
+    return mongoose.model<IInvoice>('Invoice', InvoiceSchema);
+  })();
 

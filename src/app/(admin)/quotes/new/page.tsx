@@ -208,13 +208,13 @@ export default function NewQuotePage() {
         terms,
       };
 
-      const res = await fetch('/api/quotes', {
+      const data = await fetchJsonWithBuffer('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        timeoutMs: 20000,
       });
 
-      const data = await res.json();
       if (!data.success) {
         throw new Error(data.error || 'Failed to create quote');
       }
@@ -222,11 +222,15 @@ export default function NewQuotePage() {
       const quoteId = data.quote._id;
 
       if (autoSend) {
-        await fetch(`/api/quotes/${quoteId}/send`, {
+        const sendData = await fetchJsonWithBuffer(`/api/quotes/${quoteId}/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ actor: 'admin' }),
+          timeoutMs: 15000,
         });
+        if (!sendData.success) {
+          throw new Error(sendData.error || 'Quote created, but failed to mark as sent');
+        }
       }
 
       router.push(`/quotes/${quoteId}`);

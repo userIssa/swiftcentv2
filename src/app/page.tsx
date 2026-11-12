@@ -21,14 +21,8 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-
-function SparkleStar({ className = 'w-4 h-4' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M12 0L14.4 9.6L24 12L14.4 14.4L12 24L9.6 14.4L0 12L9.6 9.6L12 0Z" />
-    </svg>
-  );
-}
+import { OrbitalFeatureDock } from '@/components/OrbitalFeatureDock';
+import { SparkleStar } from '@/components/SparkleStar';
 
 export default function LandingPage() {
   const { user } = useAuth();
@@ -138,83 +132,8 @@ export default function LandingPage() {
           </Link>
         </div>
 
-        {/* The Signature Orbital Feature Dock (From Reference Design) */}
-        <div className="relative flex items-center justify-center gap-2.5 sm:gap-4 mt-20 pt-2">
-          {/* Left connector ray */}
-          <div className="hidden lg:block w-16 h-[1px] bg-gradient-to-r from-transparent to-sky-400/30" />
-
-          {/* Left Orbs */}
-          <div
-            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-md flex items-center justify-center text-slate-400 hover:text-white hover:border-sky-400/40 hover:scale-110 transition-all shadow-lg cursor-pointer"
-            title="Multi-Business Management"
-          >
-            <Building className="w-4 h-4" />
-          </div>
-
-          <div
-            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-md flex items-center justify-center text-slate-400 hover:text-white hover:border-sky-400/40 hover:scale-110 transition-all shadow-lg cursor-pointer"
-            title="Quotes & Estimates"
-          >
-            <FileText className="w-4 h-4" />
-          </div>
-
-          <div
-            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-md flex items-center justify-center text-slate-400 hover:text-white hover:border-sky-400/40 hover:scale-110 transition-all shadow-lg cursor-pointer"
-            title="1-Click Invoice Conversion"
-          >
-            <Zap className="w-4 h-4" />
-          </div>
-
-          <div
-            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-md flex items-center justify-center text-slate-400 hover:text-white hover:border-sky-400/40 hover:scale-110 transition-all shadow-lg cursor-pointer"
-            title="256-Bit Bank Encryption"
-          >
-            <ShieldCheck className="w-4 h-4" />
-          </div>
-
-          {/* Center Radiant Core: Glowing Star / Sparkle */}
-          <div className="relative mx-1 group">
-            <div className="absolute inset-0 rounded-full bg-sky-400/30 blur-xl animate-pulse" />
-            <div
-              className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-sky-400/20 via-blue-500/25 to-sky-300/30 border border-sky-300/40 flex items-center justify-center backdrop-blur-2xl shadow-[0_0_30px_rgba(56,189,248,0.5)] transition-transform group-hover:scale-110 cursor-pointer"
-              title="100% Accurate Math Guarantee"
-            >
-              <SparkleStar className="w-6 h-6 text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.9)]" />
-            </div>
-          </div>
-
-          {/* Right Orbs */}
-          <div
-            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-md flex items-center justify-center text-slate-400 hover:text-white hover:border-sky-400/40 hover:scale-110 transition-all shadow-lg cursor-pointer"
-            title="Online Card Checkout"
-          >
-            <CreditCard className="w-4 h-4" />
-          </div>
-
-          <div
-            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-md flex items-center justify-center text-slate-400 hover:text-white hover:border-sky-400/40 hover:scale-110 transition-all shadow-lg cursor-pointer"
-            title="Audit-Ready Records"
-          >
-            <Lock className="w-4 h-4" />
-          </div>
-
-          <div
-            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-md flex items-center justify-center text-slate-400 hover:text-white hover:border-sky-400/40 hover:scale-110 transition-all shadow-lg cursor-pointer"
-            title="Shared Client Directory"
-          >
-            <Users className="w-4 h-4" />
-          </div>
-
-          <div
-            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-md flex items-center justify-center text-slate-400 hover:text-white hover:border-sky-400/40 hover:scale-110 transition-all shadow-lg cursor-pointer"
-            title="Instant Discount & Tax Calculator"
-          >
-            <Calculator className="w-4 h-4" />
-          </div>
-
-          {/* Right connector ray */}
-          <div className="hidden lg:block w-16 h-[1px] bg-gradient-to-l from-transparent to-sky-400/30" />
-        </div>
+        {/* The Signature Interactive Orbital Feature Slider */}
+        <OrbitalFeatureDock />
       </section>
 
       {/* Section 1: Core Platform Pillars (Refined Glassmorphism) */}

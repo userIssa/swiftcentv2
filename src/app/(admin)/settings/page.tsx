@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useActiveBusiness } from '@/context/ActiveBusinessContext';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { CurrencySelect } from '@/components/CurrencySelect';
 import { SearchableCombobox } from '@/components/SearchableCombobox';
+import { ThemeTogglePill } from '@/components/ThemeTogglePill';
 import {
   BANKING_REGION_PRESETS,
   getBankingPreset,
@@ -29,10 +31,13 @@ import {
   EyeOff,
   Database,
   Trash2,
+  Moon,
+  Sun,
 } from 'lucide-react';
 
 export default function SettingsPage() {
   const { activeBusiness, refreshBusinesses } = useActiveBusiness();
+  const { theme, setTheme } = useTheme();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -194,6 +199,35 @@ export default function SettingsPage() {
 
       {/* Form */}
       <form onSubmit={handleSave} className="space-y-6">
+        {/* Section 0: Interface Appearance / Theme Mode */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-900">Appearance & Theme</h3>
+                  <span className="text-[10.5px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                    {theme === 'dark' ? 'Dark Glass ' : 'Light Mode'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Toggle between our default celestial blurry glass look and classic Light Mode
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 self-end sm:self-center">
+              <span className="text-xs font-medium text-slate-400 hidden sm:inline">
+                {theme === 'dark' ? 'Dark' : 'Light'}
+              </span>
+              <ThemeTogglePill theme={theme} onChange={setTheme} />
+            </div>
+          </div>
+        </div>
+
         {/* Section 1: Stripe & Payment Gateways */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6 space-y-5">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">

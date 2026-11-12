@@ -14,6 +14,7 @@ import {
   formatDurationCompact,
 } from '../src/lib/admin-metrics';
 import { VoiceSessionUsageAccumulator } from '../src/lib/voice/usage-tracker';
+import { resolveAppTheme } from '../src/context/ThemeContext';
 
 test('isPlatformAdminUser distinguishes superadmins and allowlisted emails from customer accounts', () => {
   const origEmails = process.env.PLATFORM_ADMIN_EMAILS;
@@ -197,5 +198,13 @@ test('evaluateAdminRoleChange guards self/env demotion and keeps sample data off
       process.env.DEV_SAMPLE_ACCOUNT_EMAILS = origSampleEmails;
     }
   }
+});
+
+test('resolveAppTheme defaults to dark and respects explicit light mode toggle', () => {
+  assert.equal(resolveAppTheme(undefined), 'dark');
+  assert.equal(resolveAppTheme(null), 'dark');
+  assert.equal(resolveAppTheme(''), 'dark');
+  assert.equal(resolveAppTheme('dark'), 'dark');
+  assert.equal(resolveAppTheme('light'), 'light');
 });
 

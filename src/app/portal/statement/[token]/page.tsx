@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
 import { QuoteStatusBadge } from '@/components/QuoteStatusBadge';
+import { PortalViewport } from '@/components/PortalViewport';
 import { formatCurrency } from '@/engine/calculator';
 import { getWireDisplayLabels } from '@/lib/banking-regions';
 import { fetchJsonWithBuffer } from '@/lib/api-fetch';
@@ -56,24 +57,24 @@ export default function ClientStatementPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <PortalViewport className="flex items-center justify-center p-4">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-sm text-slate-500">Loading account statement...</p>
         </div>
-      </div>
+      </PortalViewport>
     );
   }
 
   if (error || !statement) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <PortalViewport className="flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center max-w-md w-full shadow-sm">
           <Receipt className="w-10 h-10 text-rose-500 mx-auto mb-3" />
           <h2 className="text-lg font-bold text-slate-900">Statement Unavailable</h2>
           <p className="text-xs text-slate-500 mt-1">{error || 'This link may have expired or is invalid.'}</p>
         </div>
-      </div>
+      </PortalViewport>
     );
   }
 
@@ -82,7 +83,7 @@ export default function ClientStatementPage({
   const logoUrl = org.branding?.logoUrl;
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+    <PortalViewport className="py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Navigation / Action Bar (Hidden in Print) */}
         <div className="no-print flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
@@ -397,7 +398,7 @@ export default function ClientStatementPage({
             })()}
         </div>
       </div>
-    </div>
+    </PortalViewport>
   );
 }
 

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
 import { DocumentTemplateView } from '@/components/DocumentTemplateView';
+import { PortalViewport } from '@/components/PortalViewport';
 import { formatCurrency } from '@/engine/calculator';
 import { InvoiceStatus } from '@/engine/state-machine';
 import { fetchJsonWithBuffer } from '@/lib/api-fetch';
@@ -102,18 +103,18 @@ export default function ClientPortalPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <PortalViewport className="flex items-center justify-center p-4">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-sm text-slate-500">Loading secure invoice...</p>
         </div>
-      </div>
+      </PortalViewport>
     );
   }
 
   if (error || !invoice) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <PortalViewport className="flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center max-w-md w-full shadow-sm">
           <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-3">
             <Lock className="w-6 h-6" />
@@ -123,7 +124,7 @@ export default function ClientPortalPage({
             {error || 'The link may have expired or is incorrect. Please contact the issuer.'}
           </p>
         </div>
-      </div>
+      </PortalViewport>
     );
   }
 
@@ -131,7 +132,7 @@ export default function ClientPortalPage({
   const orgLogoUrl = invoice.organizationSnapshot?.branding?.logoUrl || (invoice.organizationId as any)?.branding?.logoUrl;
 
   return (
-    <div className="min-h-screen bg-slate-100 py-10 px-4 sm:px-6 lg:px-8">
+    <PortalViewport className="py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Top Floating Action Bar - hidden in print */}
         <div className="no-print bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -321,7 +322,7 @@ export default function ClientPortalPage({
           </div>
         </div>
       )}
-    </div>
+    </PortalViewport>
   );
 }
 

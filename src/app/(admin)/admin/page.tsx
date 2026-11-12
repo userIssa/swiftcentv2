@@ -18,6 +18,7 @@ import {
   Mic,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 import { formatCurrency } from '@/engine/calculator';
 import { getCurrencyFlag } from '@/lib/currencies';
@@ -116,6 +117,7 @@ function DailyBarTrend({
 
 export default function PlatformAdminPage() {
   const { user, loading: authLoading } = useAuth();
+  const { isDark } = useTheme();
   const [overview, setOverview] = useState<PlatformAdminOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -284,7 +286,7 @@ export default function PlatformAdminPage() {
         </div>
         <h1 className="text-xl font-bold text-slate-900">Sign In Required</h1>
         <p className="text-sm text-slate-500">
-          Please sign in with your platform administrator account to view user analytics and system essentials.
+          Please sign in with your platform administrator account to view user analytics and Gemini usage.
         </p>
         <Link
           href="/login"
@@ -358,10 +360,16 @@ export default function PlatformAdminPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+        <h1
+          className={`text-2xl sm:text-3xl font-bold tracking-tight ${
+            isDark
+              ? 'text-transparent bg-clip-text bg-gradient-to-b from-white via-[#d6e7f7] to-[#8db2d4]'
+              : 'text-slate-900'
+          }`}
+        >
           User & Platform Essentials Monitor
         </h1>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 mt-1">
           Live account counts, workspace adoption, multi-currency billing volume, and Gemini API usage
         </p>
       </div>
@@ -379,7 +387,7 @@ export default function PlatformAdminPage() {
           </div>
           <div className="text-3xl font-bold text-slate-900 tabular-nums">{kpis.totalUsers}</div>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+            <span className="font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
               +{kpis.newUsersLast7d} in 7d
             </span>
             <span className="text-slate-400">
@@ -421,11 +429,11 @@ export default function PlatformAdminPage() {
             <span className="text-base font-medium text-slate-400">/ {kpis.totalQuotes} quotes</span>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
+            <span className="font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
               {kpis.quoteConversionRatePct}% quote conversion
             </span>
             {kpis.overdueInvoices > 0 && (
-              <span className="font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full">
+              <span className="font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
                 {kpis.overdueInvoices} overdue
               </span>
             )}

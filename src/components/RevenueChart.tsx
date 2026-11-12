@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { formatCurrency } from '@/engine/calculator';
+import { useTheme } from '@/context/ThemeContext';
 import { TrendingUp, ArrowUpRight, Calendar, BarChart2 } from 'lucide-react';
 
 interface RevenueChartProps {
@@ -18,6 +19,7 @@ interface DataPoint {
 }
 
 export function RevenueChart({ invoices = [], currency = 'USD' }: RevenueChartProps) {
+  const { isDark } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [timeframe, setTimeframe] = useState<Timeframe>('6m');
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -273,7 +275,7 @@ export function RevenueChart({ invoices = [], currency = 'USD' }: RevenueChartPr
                     y1={y}
                     x2={svgWidth - paddingX}
                     y2={y}
-                    stroke="#f1f5f9"
+                    stroke={isDark ? 'rgba(255,255,255,0.08)' : '#f1f5f9'}
                     strokeWidth="1"
                     strokeDasharray="4 4"
                   />
@@ -312,7 +314,7 @@ export function RevenueChart({ invoices = [], currency = 'USD' }: RevenueChartPr
                     cy={pt.y}
                     r={hoveredIndex === i ? '5' : '3.5'}
                     fill="#2563eb"
-                    stroke="#ffffff"
+                    stroke={isDark ? '#09142c' : '#ffffff'}
                     strokeWidth="2"
                     className="transition-all cursor-pointer"
                     onMouseEnter={() => setHoveredIndex(i)}
@@ -328,7 +330,7 @@ export function RevenueChart({ invoices = [], currency = 'USD' }: RevenueChartPr
                     cy={pt.y}
                     r={hoveredIndex === i ? '5' : '3.5'}
                     fill="#10b981"
-                    stroke="#ffffff"
+                    stroke={isDark ? '#09142c' : '#ffffff'}
                     strokeWidth="2"
                     className="transition-all cursor-pointer"
                     onMouseEnter={() => setHoveredIndex(i)}

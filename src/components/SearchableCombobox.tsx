@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
 
 export interface ComboboxOption {
   value: string;
@@ -77,7 +78,7 @@ export function SearchableCombobox({
   selectedIconFallback = '🌐',
   compact = false,
   disabled = false,
-  variant = 'light',
+  variant,
   allowCustomValue = false,
   transformCustomValue,
   customActionLabel,
@@ -174,7 +175,8 @@ export function SearchableCombobox({
     }
   };
 
-  const isDark = variant === 'dark';
+  const { theme } = useTheme();
+  const isDark = (variant ?? theme) === 'dark';
   const displayLabel = selectedOption?.label || value || placeholder;
   const displayIcon = selectedOption?.icon || (value ? selectedIconFallback : undefined);
 
@@ -194,10 +196,10 @@ export function SearchableCombobox({
         } ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${
           open
             ? isDark
-              ? 'bg-[#0b1326] border-sky-400 ring-2 ring-sky-400/20 text-white'
+              ? 'bg-white/[0.08] backdrop-blur-xl border-sky-400/70 ring-2 ring-sky-400/20 text-white'
               : 'bg-white border-indigo-400 ring-2 ring-indigo-500/20 text-slate-900 shadow-xs'
             : isDark
-              ? 'bg-[#0b1326] border-white/[0.1] hover:border-white/25 text-white'
+              ? 'bg-white/[0.05] backdrop-blur-xl border-white/[0.12] hover:border-white/25 text-white'
               : 'bg-white border-slate-200 hover:border-slate-300 text-slate-800'
         }`}
       >
@@ -286,7 +288,7 @@ export function SearchableCombobox({
             dropUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
           } ${
             isDark
-              ? 'bg-[#10182d] border-white/15 text-slate-100'
+              ? 'bg-[#081026]/90 backdrop-blur-2xl border-white/15 text-slate-100 shadow-[0_24px_60px_rgba(0,0,0,0.7)]'
               : 'bg-white border-slate-200/90 text-slate-800'
           }`}
         >

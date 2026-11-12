@@ -62,7 +62,7 @@ export function BusinessSwitcher({ collapsed = false, dark = false }: BusinessSw
               }`
               : `justify-between gap-2.5 p-2.5 rounded-xl border ${
                   dark
-                    ? 'border-white/[0.1] bg-gradient-to-r from-[#1a1c20] via-[#17191d] to-[#23262e] hover:border-white/20 text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+                    ? 'border-white/[0.11] bg-gradient-to-r from-white/[0.08] via-white/[0.05] to-sky-400/[0.08] backdrop-blur-xl hover:border-white/[0.22] text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
                     : 'border-slate-200/90 bg-gradient-to-r from-slate-50/90 via-white to-blue-50/60 hover:border-blue-300/80 text-slate-800 shadow-2xs'
                 }`
         }`}
@@ -129,7 +129,7 @@ export function BusinessSwitcher({ collapsed = false, dark = false }: BusinessSw
             collapsed ? 'left-full ml-3 top-0 mt-0 w-60' : 'left-0 w-full'
           } ${
             dark
-              ? 'bg-[#1c1f27] border-white/10 text-slate-100'
+              ? 'bg-[#081026]/90 backdrop-blur-2xl border-white/15 text-slate-100 shadow-[0_24px_60px_rgba(0,0,0,0.75)]'
               : 'bg-white border-slate-200 text-slate-800'
           }`}
         >

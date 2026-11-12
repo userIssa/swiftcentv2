@@ -20,6 +20,7 @@ import {
 import { useVoiceDraftSession } from '@/lib/voice/useVoiceDraftSession';
 import { VoiceDocumentDraft, VoiceDraftActions } from '@/lib/voice/types';
 import { computeVoiceDockGeometry, VoicePanelMode } from '@/lib/voice/dock-layout';
+import { TypewriterText } from '@/components/TypewriterText';
 import { useVoiceDock } from '@/context/VoiceDockContext';
 
 interface VoiceDraftCopilotProps {
@@ -376,10 +377,16 @@ export function VoiceDraftCopilot({
 
             {/* Spoken Guidance / Latest Dialogue + Live Action Badges */}
             <div className="w-full max-w-[300px] space-y-2.5 text-center">
-              <p className="text-xs sm:text-sm font-medium text-slate-700/90 leading-relaxed line-clamp-3">
-                {latestDialogue
-                  ? latestDialogue.text
-                  : `Speak naturally to build your ${docLabel.toLowerCase()} — client, items, discounts, and terms.`}
+              <p className="text-xs sm:text-sm font-medium text-slate-700/90 leading-relaxed line-clamp-3 min-h-[2.5rem]">
+                {latestDialogue ? (
+                  <TypewriterText
+                    text={latestDialogue.text}
+                    streamKey={latestDialogue.id}
+                    isFinal={latestDialogue.isFinal}
+                  />
+                ) : (
+                  `Speak naturally to build your ${docLabel.toLowerCase()} — client, items, discounts, and terms.`
+                )}
               </p>
 
               {latestEndedNotice && (
@@ -465,6 +472,9 @@ export function VoiceDraftCopilot({
                   }
 
                   const isUser = entry.speaker === 'user';
+                  const isLatestTranscript =
+                    entry.id === transcripts[transcripts.length - 1]?.id;
+
                   return (
                     <div
                       key={entry.id}
@@ -477,10 +487,21 @@ export function VoiceDraftCopilot({
                             : 'bg-white text-slate-800 border border-slate-200/70'
                         }`}
                       >
-                        <span>{entry.text}</span>
-                        {!entry.isFinal && (
-                          <span className="inline-block w-1.5 h-3 ml-1 bg-current opacity-60 animate-pulse align-middle" />
-                        )}
+                        <TypewriterText
+                          text={entry.text}
+                          streamKey={entry.id}
+                          isFinal={entry.isFinal}
+                          startComplete={Boolean(entry.isFinal && !isLatestTranscript)}
+                          onProgress={
+                            isLatestTranscript
+                              ? () =>
+                                  feedEndRef.current?.scrollIntoView({
+                                    behavior: 'auto',
+                                    block: 'nearest',
+                                  })
+                              : undefined
+                          }
+                        />
                       </div>
                     </div>
                   );

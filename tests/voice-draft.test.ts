@@ -15,6 +15,7 @@ import {
 import { executeVoiceToolCall } from '../src/lib/voice/tool-executor';
 import { computeVoiceDockGeometry } from '../src/lib/voice/dock-layout';
 import { INACTIVITY_AUTO_END_MS } from '../src/lib/voice/useVoiceDraftSession';
+import { getSharedPrefixLength, computeTypewriterStep } from '../src/lib/voice/typewriter';
 import { VoiceDocumentDraft, VoiceDraftActions, VoiceFormLineItem } from '../src/lib/voice/types';
 
 test('scoreTextMatch and rankCatalogMatches resolve fuzzy client and catalog queries', () => {
@@ -494,5 +495,17 @@ test('executeVoiceToolCall supports switching currency per draft to global curre
   assert.equal(draftRef.current.currency, 'NGN');
   assert.equal((resp.response as any).summary.currency, 'NGN');
   assert.equal((resp.response as any).summary.formattedGrandTotal, '₦537,500.00');
+});
+
+test('typewriter helpers preserve shared prefixes on live streaming updates and adapt catchup speed', () => {
+  assert.equal(getSharedPrefixLength('Hello', 'Hello world!'), 5);
+  assert.equal(getSharedPrefixLength('Add two spri', 'Add two sprints'), 12);
+  assert.equal(getSharedPrefixLength('Totally different', 'New phrase'), 0);
+
+  assert.equal(computeTypewriterStep(0), 0);
+  assert.equal(computeTypewriterStep(8), 1);
+  assert.equal(computeTypewriterStep(30), 2);
+  assert.equal(computeTypewriterStep(60), 3);
+  assert.equal(computeTypewriterStep(120), 5);
 });
 

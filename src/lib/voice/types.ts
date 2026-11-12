@@ -71,6 +71,7 @@ export interface VoiceTranscriptEntry {
 export interface VoiceSessionTokenResponse {
   success: boolean;
   token?: string;
+  usageLogId?: string;
   model?: string;
   expireTime?: string;
   organizationId?: string;

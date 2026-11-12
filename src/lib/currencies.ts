@@ -80,6 +80,11 @@ export function getCurrencySymbol(currency?: string | null): string {
   }
 }
 
+export function getCurrencyFlag(currency?: string | null): string {
+  const code = normalizeCurrencyCode(currency, 'USD');
+  return CURRENCY_BY_CODE.get(code)?.flag || '🌐';
+}
+
 export function getCurrencySelectOptions(currentValue?: string | null): CurrencyOption[] {
   const normalized = normalizeCurrencyCode(currentValue, 'USD');
   if (CURRENCY_BY_CODE.has(normalized)) {

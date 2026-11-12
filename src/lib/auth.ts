@@ -1,7 +1,29 @@
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 
-const AUTH_SECRET = process.env.AUTH_SECRET || 'swiftcent-super-secure-jwt-hmac-secret-key-2026';
+const DEFAULT_AUTH_SECRET = 'swiftcent-super-secure-jwt-hmac-secret-key-2026';
+const AUTH_SECRET = process.env.AUTH_SECRET || DEFAULT_AUTH_SECRET;
+
+export function isCustomAuthSecretConfigured(): boolean {
+  return Boolean(process.env.AUTH_SECRET && process.env.AUTH_SECRET.trim().length > 0);
+}
+
+/**
+ * Constant-time equality check for secret/password strings of arbitrary length.
+ */
+export function safeSecretMatch(candidate: string, expected: string): boolean {
+  const candidateDigest = crypto.createHash('sha256').update(candidate).digest();
+  const expectedDigest = crypto.createHash('sha256').update(expected).digest();
+  return crypto.timingSafeEqual(candidateDigest, expectedDigest);
+}
+
+function parseEmailList(raw?: string): string[] {
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+}
 
 export function hashPassword(password: string): { salt: string; hash: string } {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -76,12 +98,32 @@ export async function getSessionUser(): Promise<SessionPayload | null> {
  */
 export function isSampleDataEnabledForEmail(email?: string | null): boolean {
   if (!email) return false;
-  const raw = process.env.DEV_SAMPLE_ACCOUNT_EMAILS || '';
-  const allowlist = raw
-    .split(',')
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean);
+  const allowlist = parseEmailList(process.env.DEV_SAMPLE_ACCOUNT_EMAILS);
   return allowlist.includes(email.trim().toLowerCase());
+}
+
+/**
+ * Checks if an email is explicitly allowlisted via PLATFORM_ADMIN_EMAILS or PLATFORM_ADMIN_EMAIL.
+ */
+export function isPlatformAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  const allowlist = [
+    ...parseEmailList(process.env.PLATFORM_ADMIN_EMAILS),
+    ...parseEmailList(process.env.PLATFORM_ADMIN_EMAIL),
+  ];
+  return allowlist.includes(normalized);
+}
+
+/**
+ * Regular customer accounts default to role='admin' for their own workspaces,
+ * so platform-level admin access requires explicit role='superadmin' or allowlisted email.
+ */
+export function isPlatformAdminUser(
+  user?: { email?: string | null; role?: string | null } | null
+): boolean {
+  if (!user) return false;
+  return user.role === 'superadmin' || isPlatformAdminEmail(user.email);
 }
 
 export function serializeSessionUser(user: {
@@ -96,6 +138,42 @@ export function serializeSessionUser(user: {
     email: user.email,
     role: user.role,
     canLoadSampleData: isSampleDataEnabledForEmail(user.email),
+    isPlatformAdmin: isPlatformAdminUser(user),
+  };
+}
+
+export type RoleChangeDecision =
+  | { allowed: true; nextRole: 'superadmin' | 'admin' }
+  | { allowed: false; status: 400; error: string };
+
+/**
+ * Enforces safety rules when an admin promotes or demotes another user account.
+ */
+export function evaluateAdminRoleChange(params: {
+  actorUserId: string;
+  targetUserId: string;
+  targetEmail: string;
+  makeAdmin: boolean;
+}): RoleChangeDecision {
+  if (!params.makeAdmin && params.actorUserId === params.targetUserId) {
+    return {
+      allowed: false,
+      status: 400,
+      error: 'You cannot remove your own platform admin access.',
+    };
+  }
+
+  if (!params.makeAdmin && isPlatformAdminEmail(params.targetEmail)) {
+    return {
+      allowed: false,
+      status: 400,
+      error: 'This account is protected by PLATFORM_ADMIN_EMAILS environment configuration.',
+    };
+  }
+
+  return {
+    allowed: true,
+    nextRole: params.makeAdmin ? 'superadmin' : 'admin',
   };
 }
 

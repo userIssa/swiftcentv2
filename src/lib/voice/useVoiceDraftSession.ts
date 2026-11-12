@@ -5,6 +5,7 @@ import { GoogleGenAI, LiveServerMessage, Session } from '@google/genai';
 import { VoiceAudioEngine } from './audio-io';
 import { executeVoiceToolCall } from './tool-executor';
 import { GEMINI_LIVE_MODEL } from './tool-declarations';
+import { VoiceSessionUsageAccumulator } from './usage-tracker';
 import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 import {
   VoiceConnectionState,
@@ -85,6 +86,9 @@ export function useVoiceDraftSession({
   const audioRef = useRef<VoiceAudioEngine | null>(null);
   const resumeHandleRef = useRef<string | null>(null);
   const activeTokenRef = useRef<{ token: string; model: string; expireAtMs: number } | null>(null);
+  const usageLogIdRef = useRef<string | null>(null);
+  const usageAccumulatorRef = useRef<VoiceSessionUsageAccumulator | null>(null);
+  const usageSyncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const cancelledToolIdsRef = useRef<Set<string>>(new Set());
   const manualStopRef = useRef(false);
   const reconnectingRef = useRef(false);
@@ -155,7 +159,52 @@ export function useVoiceDraftSession({
       clearTimeout(autoEndFallbackTimerRef.current);
       autoEndFallbackTimerRef.current = null;
     }
+    if (usageSyncTimerRef.current) {
+      clearInterval(usageSyncTimerRef.current);
+      usageSyncTimerRef.current = null;
+    }
   }, []);
+
+  const flushVoiceUsage = useCallback(
+    (status: 'active' | 'ended', endReason?: string, useBeacon = false) => {
+      const usageLogId = usageLogIdRef.current;
+      const accumulator = usageAccumulatorRef.current;
+      if (!usageLogId || !accumulator) return;
+
+      const snapshot = accumulator.getSnapshot();
+      const payload = JSON.stringify({
+        usageLogId,
+        status,
+        endReason,
+        ...snapshot,
+      });
+
+      if (status === 'ended') {
+        usageLogIdRef.current = null;
+        usageAccumulatorRef.current = null;
+      }
+
+      if (useBeacon && typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+        try {
+          const blob = new Blob([payload], { type: 'application/json' });
+          navigator.sendBeacon('/api/voice/usage', blob);
+          return;
+        } catch {
+          // fallback to fetch keepalive below
+        }
+      }
+
+      void fetch('/api/voice/usage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+        keepalive: status === 'ended',
+      }).catch(() => {
+        // non-blocking telemetry
+      });
+    },
+    []
+  );
 
   const teardownHardwareAndSocket = useCallback(async () => {
     clearAllSessionTimers();
@@ -183,10 +232,11 @@ export function useVoiceDraftSession({
   }, [clearAllSessionTimers]);
 
   const endSessionWithReason = useCallback(
-    async (systemNotice?: string) => {
+    async (systemNotice?: string, endReason = 'user_stop') => {
       manualStopRef.current = true;
       resumeHandleRef.current = null;
       activeTokenRef.current = null;
+      flushVoiceUsage('ended', endReason);
       try {
         sessionRef.current?.sendRealtimeInput({ audioStreamEnd: true });
       } catch {
@@ -200,7 +250,7 @@ export function useVoiceDraftSession({
         appendSystemOrAction('system', systemNotice);
       }
     },
-    [appendSystemOrAction, finalizeOpenTranscripts, teardownHardwareAndSocket]
+    [appendSystemOrAction, finalizeOpenTranscripts, flushVoiceUsage, teardownHardwareAndSocket]
   );
 
   const scheduleGracefulAutoEnd = useCallback(
@@ -215,7 +265,7 @@ export function useVoiceDraftSession({
           pending.reason === 'off_topic_refusal'
             ? 'Voice session ended due to off-topic requests.'
             : 'Voice session ended.';
-        void endSessionWithReason(notice);
+        void endSessionWithReason(notice, pending.reason);
       }, delayMs);
     },
     [endSessionWithReason]
@@ -244,7 +294,7 @@ export function useVoiceDraftSession({
           reason === 'off_topic_refusal'
             ? 'Voice session ended due to off-topic requests.'
             : 'Voice session ended.';
-        void endSessionWithReason(notice);
+        void endSessionWithReason(notice, reason);
       }, AUTO_END_FALLBACK_MS);
     },
     [endSessionWithReason]
@@ -257,7 +307,10 @@ export function useVoiceDraftSession({
     }
     inactivityTimerRef.current = setTimeout(() => {
       if (sessionRef.current || audioRef.current) {
-        void endSessionWithReason('Voice session ended after 2 minutes of inactivity.');
+        void endSessionWithReason(
+          'Voice session ended after 2 minutes of inactivity.',
+          'inactivity_timeout'
+        );
       }
     }, INACTIVITY_AUTO_END_MS);
   }, [endSessionWithReason]);
@@ -287,6 +340,8 @@ export function useVoiceDraftSession({
       expireAtMs,
     };
     activeTokenRef.current = tokenObj;
+    usageLogIdRef.current = data.usageLogId || null;
+    usageAccumulatorRef.current = new VoiceSessionUsageAccumulator(Date.now());
     return tokenObj;
   }, []);
 
@@ -304,6 +359,10 @@ export function useVoiceDraftSession({
       });
 
       const handleServerMessage = async (msg: LiveServerMessage) => {
+        if (msg.usageMetadata) {
+          usageAccumulatorRef.current?.recordUsageMetadata(msg.usageMetadata);
+        }
+
         if (msg.sessionResumptionUpdate?.resumable && msg.sessionResumptionUpdate.newHandle) {
           resumeHandleRef.current = msg.sessionResumptionUpdate.newHandle;
         }
@@ -340,6 +399,7 @@ export function useVoiceDraftSession({
 
         if (msg.toolCall?.functionCalls && msg.toolCall.functionCalls.length > 0) {
           resetInactivityTimer();
+          usageAccumulatorRef.current?.recordToolCalls(msg.toolCall.functionCalls.length);
           const functionResponses = [];
 
           for (const fc of msg.toolCall.functionCalls) {
@@ -399,6 +459,7 @@ export function useVoiceDraftSession({
         }
 
         if (content.turnComplete || content.generationComplete) {
+          usageAccumulatorRef.current?.commitTurn();
           finalizeOpenTranscripts();
           resetInactivityTimer();
         }
@@ -422,6 +483,11 @@ export function useVoiceDraftSession({
         callbacks: {
           onopen: () => {
             reconnectAttemptsRef.current = 0;
+            flushVoiceUsage('active');
+            if (usageSyncTimerRef.current) clearInterval(usageSyncTimerRef.current);
+            usageSyncTimerRef.current = setInterval(() => {
+              flushVoiceUsage('active');
+            }, 15000);
           },
           onmessage: (msg) => {
             void handleServerMessage(msg);
@@ -441,6 +507,7 @@ export function useVoiceDraftSession({
                     setConnectionState('connected');
                   })
                   .catch((err) => {
+                    flushVoiceUsage('ended', 'reconnect_failed');
                     setErrorMessage(err?.message || `Connection closed (${closeEvent.code})`);
                     setConnectionState('error');
                   })
@@ -449,6 +516,7 @@ export function useVoiceDraftSession({
                   });
               }, 750);
             } else {
+              flushVoiceUsage('ended', 'disconnect');
               setConnectionState('idle');
               if (closeEvent.reason) {
                 appendSystemOrAction('system', `Session ended: ${closeEvent.reason}`);
@@ -481,6 +549,7 @@ export function useVoiceDraftSession({
       appendSystemOrAction,
       fetchToken,
       finalizeOpenTranscripts,
+      flushVoiceUsage,
       requestAutoEndSession,
       resetInactivityTimer,
       scheduleGracefulAutoEnd,
@@ -539,6 +608,7 @@ export function useVoiceDraftSession({
         `Voice Copilot connected for ${draftRef.current.documentType}. Speak naturally to build your draft.`
       );
     } catch (err: any) {
+      flushVoiceUsage('ended', 'init_error');
       await teardownHardwareAndSocket();
       setErrorCode(err?.code || 'INIT_ERROR');
       setErrorMessage(err?.message || 'Unable to start voice session');
@@ -548,6 +618,7 @@ export function useVoiceDraftSession({
     appendSystemOrAction,
     connectWebSocket,
     connectionState,
+    flushVoiceUsage,
     resetInactivityTimer,
     scheduleGracefulAutoEnd,
     teardownHardwareAndSocket,
@@ -598,11 +669,21 @@ export function useVoiceDraftSession({
   }, []);
 
   useEffect(() => {
+    const handlePageHide = () => {
+      flushVoiceUsage('ended', 'page_unload', true);
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pagehide', handlePageHide);
+    }
     return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('pagehide', handlePageHide);
+      }
       manualStopRef.current = true;
+      flushVoiceUsage('ended', 'unmount', true);
       void teardownHardwareAndSocket();
     };
-  }, [teardownHardwareAndSocket]);
+  }, [flushVoiceUsage, teardownHardwareAndSocket]);
 
   return {
     connectionState,

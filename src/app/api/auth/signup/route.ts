@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { Organization } from '@/models/Organization';
-import { hashPassword, createSessionToken, serializeSessionUser } from '@/lib/auth';
+import { hashPassword, createSessionToken, serializeSessionUser, isPlatformAdminEmail } from '@/lib/auth';
 import { normalizeCurrencyCode } from '@/lib/currencies';
 
 export async function POST(request: Request) {
@@ -21,6 +21,13 @@ export async function POST(request: Request) {
     await connectToDatabase();
 
     const normalizedEmail = email.toLowerCase().trim();
+    if (isPlatformAdminEmail(normalizedEmail)) {
+      return NextResponse.json(
+        { success: false, error: 'This email is reserved for platform administration. Please sign in instead.' },
+        { status: 403 }
+      );
+    }
+
     const existing = await User.findOne({ email: normalizedEmail });
     if (existing) {
       return NextResponse.json({ success: false, error: 'An account with this email already exists' }, { status: 400 });
@@ -33,6 +40,7 @@ export async function POST(request: Request) {
       salt,
       passwordHash: hash,
       role: 'admin',
+      lastLoginAt: new Date(),
     });
 
     // Automatically create a private, fresh workspace exclusively for this new user

@@ -21,6 +21,7 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronRight,
+  ShieldCheck,
 } from 'lucide-react';
 import { ActiveBusinessProvider } from '@/context/ActiveBusinessContext';
 import { VoiceDockProvider, useVoiceDock } from '@/context/VoiceDockContext';
@@ -267,6 +268,25 @@ function SidebarNav({
             </div>
           )}
         </div>
+
+        {/* PLATFORM ADMIN Section (visible strictly to Platform Admins) */}
+        {user?.isPlatformAdmin && (
+          <div className="pt-2.5 border-t border-slate-200/80 space-y-2">
+            {!collapsed && (
+              <div className="px-1.5 py-1 text-[10.5px] font-semibold tracking-[0.09em] uppercase text-blue-600/80">
+                PLATFORM
+              </div>
+            )}
+            <div className={collapsed ? 'space-y-2.5 pt-1' : 'space-y-1'}>
+              {renderNavItem({
+                label: 'Platform Monitor',
+                href: '/admin',
+                icon: ShieldCheck,
+                active: pathname.startsWith('/admin'),
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bottom User Account Card & Sign Out */}

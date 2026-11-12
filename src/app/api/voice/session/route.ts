@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { Client } from '@/models/Client';
 import { Product } from '@/models/Product';
+import { VoiceUsageLog } from '@/models/VoiceUsageLog';
 import { formatCurrency } from '@/engine/calculator';
 import { resolveAuthorizedOrganization } from '@/lib/voice/server-auth';
 import {
@@ -114,9 +115,19 @@ export async function POST(request: Request) {
       throw new Error('Ephemeral token response was empty');
     }
 
+    const usageLog = await VoiceUsageLog.create({
+      userId: auth.session.userId,
+      organizationId: org._id,
+      documentType,
+      modelName: GEMINI_LIVE_MODEL,
+      status: 'provisioned',
+      startedAt: new Date(nowMs),
+    });
+
     return NextResponse.json({
       success: true,
       token: authToken.name,
+      usageLogId: usageLog._id.toString(),
       model: GEMINI_LIVE_MODEL,
       expireTime,
       organizationId: org._id.toString(),

@@ -9,19 +9,26 @@ export interface AuthUser {
   email: string;
   role: string;
   canLoadSampleData?: boolean;
+  isPlatformAdmin?: boolean;
+}
+
+interface AuthResult {
+  success: boolean;
+  error?: string;
+  user?: AuthUser;
 }
 
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<AuthResult>;
   signup: (
     name: string,
     email: string,
     password: string,
     businessName?: string,
     currency?: string
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<AuthResult>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -65,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     endpoint: '/api/auth/login' | '/api/auth/signup',
     payload: Record<string, string | undefined>,
     fallbackError: string
-  ): Promise<{ success: boolean; error?: string }> => {
+  ): Promise<AuthResult> => {
     try {
       const data = await fetchJsonWithBuffer(endpoint, {
         method: 'POST',
@@ -75,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       if (data.success && data.user) {
         setUser(data.user);
-        return { success: true };
+        return { success: true, user: data.user };
       }
       return { success: false, error: data.error || fallbackError };
     } catch (err: any) {

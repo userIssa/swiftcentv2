@@ -19,6 +19,10 @@ import {
   Coins,
   FileCheck2,
   TrendingUp,
+  Mic,
+  Globe,
+  Package,
+  Landmark,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { OrbitalFeatureDock } from '@/components/OrbitalFeatureDock';
@@ -26,7 +30,9 @@ import { SparkleStar } from '@/components/SparkleStar';
 
 export default function LandingPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'quotes' | 'invoices' | 'multibusiness' | 'precision'>('quotes');
+  const [activeTab, setActiveTab] = useState<
+    'voice' | 'quotes' | 'invoices' | 'multibusiness' | 'global' | 'precision'
+  >('voice');
 
   return (
     <div className="min-h-screen bg-[#030611] text-slate-100 selection:bg-sky-500/30 selection:text-white font-sans relative overflow-x-hidden">
@@ -150,8 +156,42 @@ export default function LandingPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Card 1: Voice Copilot */}
+          <div className="group bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.07] hover:border-sky-400/30 rounded-2xl p-7 backdrop-blur-xl transition-all shadow-[0_12px_40px_rgba(0,0,0,0.3)]">
+            <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-400/20 text-sky-300 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+              <Mic className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-semibold text-white mb-2">Voice-to-Quote & Invoice AI</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Speak naturally to assign clients, add catalog items, switch currencies, and apply taxes with real-time AI typing captions powered by Gemini Live.
+            </p>
+            <div className="mt-5 pt-4 border-t border-white/[0.05]">
+              <Link href="/invoices/new?voice=1" className="inline-flex items-center gap-1 text-xs text-sky-300 hover:underline font-medium">
+                <span>Try Voice Drafting</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 2: Global Currencies & Banking Rails */}
+          <div className="group bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.07] hover:border-sky-400/30 rounded-2xl p-7 backdrop-blur-xl transition-all shadow-[0_12px_40px_rgba(0,0,0,0.3)]">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-400/20 text-indigo-300 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+              <Globe className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-semibold text-white mb-2">Global Currencies & Bank Rails</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Choose your preferred workspace currency, override per quote or invoice, and configure local NUBAN, SEPA IBAN, Sort Code, BSB, IFSC, ACH, or SWIFT details.
+            </p>
+            <div className="mt-5 pt-4 border-t border-white/[0.05]">
+              <Link href="/settings" className="inline-flex items-center gap-1 text-xs text-sky-300 hover:underline font-medium">
+                <span>Configure Rails & Theme</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 3: Multi-Business Profiles */}
           <div className="group bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.07] hover:border-sky-400/30 rounded-2xl p-7 backdrop-blur-xl transition-all shadow-[0_12px_40px_rgba(0,0,0,0.3)]">
             <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-400/20 text-sky-300 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
               <Building className="w-5 h-5" />
@@ -168,14 +208,14 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Card 2 */}
+          {/* Card 4: Quotes Conversion */}
           <div className="group bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.07] hover:border-sky-400/30 rounded-2xl p-7 backdrop-blur-xl transition-all shadow-[0_12px_40px_rgba(0,0,0,0.3)]">
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-400/20 text-blue-300 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
               <FileCheck2 className="w-5 h-5" />
             </div>
             <h3 className="text-base font-semibold text-white mb-2">Quotes with 1-Click Conversion</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Send clients interactive proposals branded with your logo. Clients approve online and turn the quote into an active invoice in one second.
+              Send clients interactive proposals with 3 customizable templates. Clients approve online and turn the quote into an active invoice in one second.
             </p>
             <div className="mt-5 pt-4 border-t border-white/[0.05]">
               <Link href="/quotes" className="inline-flex items-center gap-1 text-xs text-sky-300 hover:underline font-medium">
@@ -185,14 +225,31 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Card 3 */}
+          {/* Card 5: Catalog & Client Statements */}
+          <div className="group bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.07] hover:border-sky-400/30 rounded-2xl p-7 backdrop-blur-xl transition-all shadow-[0_12px_40px_rgba(0,0,0,0.3)]">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-400/20 text-purple-300 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+              <Package className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-semibold text-white mb-2">Product Catalog & Client Portals</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Save services and tax presets for 1-click line-item filling, and give clients live portal links with Stripe checkout and account statements.
+            </p>
+            <div className="mt-5 pt-4 border-t border-white/[0.05]">
+              <Link href="/products" className="inline-flex items-center gap-1 text-xs text-sky-300 hover:underline font-medium">
+                <span>Browse Catalog</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 6: Guaranteed Math Accuracy */}
           <div className="group bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.07] hover:border-sky-400/30 rounded-2xl p-7 backdrop-blur-xl transition-all shadow-[0_12px_40px_rgba(0,0,0,0.3)]">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
               <Calculator className="w-5 h-5" />
             </div>
             <h3 className="text-base font-semibold text-white mb-2">Guaranteed Math Accuracy</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              No awkward $0.01 rounding discrepancies. Subtotal minus Discounts plus Taxes always balances to the exact penny on every invoice.
+              No awkward $0.01 rounding discrepancies. Subtotal minus Discounts plus Inclusive or Exclusive Taxes always balances to the exact penny.
             </p>
             <div className="mt-5 pt-4 border-t border-white/[0.05]">
               <Link href="/invoices" className="inline-flex items-center gap-1 text-xs text-sky-300 hover:underline font-medium">
@@ -217,10 +274,26 @@ export default function LandingPage() {
           </div>
 
           {/* Frosted Glass Tabs */}
-          <div className="flex items-center bg-white/[0.03] p-1 rounded-full border border-white/[0.08] text-xs font-medium backdrop-blur-xl">
+          <div className="flex flex-wrap items-center justify-center bg-white/[0.03] p-1 rounded-2xl sm:rounded-full border border-white/[0.08] text-xs font-medium backdrop-blur-xl gap-1">
+            <button
+              onClick={() => setActiveTab('voice')}
+              className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
+                activeTab === 'voice' ? 'bg-[#c8e2fb] text-[#051124] font-semibold shadow-sm' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Voice Copilot
+            </button>
+            <button
+              onClick={() => setActiveTab('global')}
+              className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
+                activeTab === 'global' ? 'bg-[#c8e2fb] text-[#051124] font-semibold shadow-sm' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Global Rails
+            </button>
             <button
               onClick={() => setActiveTab('quotes')}
-              className={`px-4 py-1.5 rounded-full transition-all ${
+              className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
                 activeTab === 'quotes' ? 'bg-[#c8e2fb] text-[#051124] font-semibold shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -228,7 +301,7 @@ export default function LandingPage() {
             </button>
             <button
               onClick={() => setActiveTab('invoices')}
-              className={`px-4 py-1.5 rounded-full transition-all ${
+              className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
                 activeTab === 'invoices' ? 'bg-[#c8e2fb] text-[#051124] font-semibold shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -236,7 +309,7 @@ export default function LandingPage() {
             </button>
             <button
               onClick={() => setActiveTab('multibusiness')}
-              className={`px-4 py-1.5 rounded-full transition-all ${
+              className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
                 activeTab === 'multibusiness' ? 'bg-[#c8e2fb] text-[#051124] font-semibold shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -244,7 +317,7 @@ export default function LandingPage() {
             </button>
             <button
               onClick={() => setActiveTab('precision')}
-              className={`px-4 py-1.5 rounded-full transition-all ${
+              className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
                 activeTab === 'precision' ? 'bg-[#c8e2fb] text-[#051124] font-semibold shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -252,6 +325,125 @@ export default function LandingPage() {
             </button>
           </div>
         </div>
+
+        {/* Tab 0: Voice Copilot */}
+        {activeTab === 'voice' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.08] rounded-3xl p-8 lg:p-12 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
+            <div className="space-y-4">
+              <span className="text-[11px] uppercase tracking-wider font-semibold text-sky-300 bg-sky-500/10 border border-sky-400/20 px-3 py-1 rounded-full">
+                Gemini Live Copilot
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-medium text-white tracking-tight">
+                Speak Your Draft Into Existence
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-normal">
+                Stop clicking through slow forms. Dictate your quote or invoice hands-free and watch items, discounts,
+                taxes, and currency updates appear live with real-time AI typing captions.
+              </p>
+              <ul className="space-y-2.5 text-xs text-slate-300 pt-1">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-sky-400 flex-shrink-0" />
+                  <span>Fuzzy-matches existing clients & products or creates new clients inline</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-sky-400 flex-shrink-0" />
+                  <span>Supports instant currency switching per draft (NGN, GBP, EUR, USD, etc.)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-sky-400 flex-shrink-0" />
+                  <span>Strict billing-only guardrails with automatic idle & spoken sign-off closure</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-[#080d1a]/90 rounded-2xl p-6 border border-sky-400/20 text-slate-200 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs font-semibold text-white">Voice Draft Copilot · Live</span>
+                </div>
+                <span className="text-[10px] font-semibold text-sky-300 bg-sky-400/10 border border-sky-400/20 px-2 py-0.5 rounded-full">
+                  Speaking...
+                </span>
+              </div>
+              <div className="rounded-xl bg-white/[0.04] border border-white/[0.08] p-3.5 text-xs text-slate-200 leading-relaxed">
+                &ldquo;Added 2 Engineering Sprints at ₦750,000 each for Acme Labs with 7.5% VAT and net-14 terms.&rdquo;
+                <span className="inline-block w-[2px] h-[1em] ml-1 bg-sky-300 animate-pulse align-text-bottom" />
+              </div>
+              <div className="space-y-2 text-[11px]">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>Assigned client Acme Labs · Currency switched to NGN</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-500/10 border border-sky-400/20 text-sky-200 font-medium">
+                  <SparkleStar className="w-3 h-3 text-sky-300 shrink-0" />
+                  <span>Total calculated: ₦1,612,500.00 (penny-exact)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 1: Global Rails & Multi-Currency */}
+        {activeTab === 'global' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.08] rounded-3xl p-8 lg:p-12 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
+            <div className="space-y-4">
+              <span className="text-[11px] uppercase tracking-wider font-semibold text-indigo-300 bg-indigo-500/10 border border-indigo-400/20 px-3 py-1 rounded-full">
+                Borderless Billing
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-medium text-white tracking-tight">
+                Built for Every Country & Currency
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-normal">
+                No US-only lock-in. Pick any preferred business currency, switch currencies per quote or invoice,
+                and display the exact local bank settlement fields your international clients expect.
+              </p>
+              <ul className="space-y-2.5 text-xs text-slate-300 pt-1">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                  <span>Searchable flag selectors for global currencies, countries & banking rails</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                  <span>Adapts fields for NUBAN, SEPA IBAN, Sort Code, BSB, IFSC, EFT & ACH</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                  <span>Dark Glass default theme with 1-click liquid-glass Light Mode in Settings</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-[#080d1a]/90 rounded-2xl p-6 border border-white/[0.08] space-y-3 text-xs shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+                <div className="flex items-center gap-2 text-white font-semibold">
+                  <Landmark className="w-4 h-4 text-sky-300" />
+                  <span>Regional Bank Rail Presets</span>
+                </div>
+                <span className="text-[10px] text-slate-400">Auto-mapped to Invoice Footer</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  { flag: '🇳🇬', label: 'Nigeria & Africa', rail: 'NUBAN / SWIFT' },
+                  { flag: '🇪🇺', label: 'Europe', rail: 'SEPA / IBAN' },
+                  { flag: '🇬🇧', label: 'United Kingdom', rail: 'Sort Code / BACS' },
+                  { flag: '🇺🇸', label: 'United States', rail: 'ACH / Wire' },
+                ].map((r) => (
+                  <div
+                    key={r.label}
+                    className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] space-y-1"
+                  >
+                    <div className="flex items-center gap-1.5 font-semibold text-white">
+                      <span>{r.flag}</span>
+                      <span>{r.label}</span>
+                    </div>
+                    <div className="text-[10.5px] text-sky-300">{r.rail}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tab 1: Quotes */}
         {activeTab === 'quotes' && (
@@ -552,7 +744,7 @@ export default function LandingPage() {
             </div>
             <h4 className="font-semibold text-white text-sm mb-1.5">Global B2B Businesses</h4>
             <p className="text-xs text-slate-400 leading-relaxed font-normal">
-              Support for multi-currency invoicing (USD, EUR, GBP, CAD, AUD) with permanent records that are always audit-ready.
+              Multi-currency invoicing (USD, NGN, EUR, GBP, CAD, AUD, INR & custom ISO codes) with regional bank transfer details and permanent audit-ready records.
             </p>
           </div>
         </div>
@@ -584,6 +776,22 @@ export default function LandingPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04] text-slate-300">
+                <tr className="hover:bg-white/[0.01] transition-colors">
+                  <td className="px-6 py-4 font-medium text-white">AI Voice-to-Document Drafting</td>
+                  <td className="px-6 py-4 text-sky-200 font-medium flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <span>Gemini Live voice copilot fills line items, clients, taxes & currencies in real time</span>
+                  </td>
+                  <td className="px-6 py-4 text-slate-500">Slow manual typing across multi-tab legacy forms</td>
+                </tr>
+                <tr className="hover:bg-white/[0.01] transition-colors">
+                  <td className="px-6 py-4 font-medium text-white">Global Currencies & Bank Rails</td>
+                  <td className="px-6 py-4 text-sky-200 font-medium flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <span>Per-document currency switching plus NUBAN, SEPA IBAN, Sort Code, IFSC, BSB, ACH & SWIFT</span>
+                  </td>
+                  <td className="px-6 py-4 text-slate-500">US-only ACH/ABA fields or rigid single-currency workspace lock-in</td>
+                </tr>
                 <tr className="hover:bg-white/[0.01] transition-colors">
                   <td className="px-6 py-4 font-medium text-white">Managing Multiple Businesses</td>
                   <td className="px-6 py-4 text-sky-200 font-medium flex items-center gap-2">

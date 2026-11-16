@@ -14,6 +14,11 @@ const THEME_INIT_SCRIPT = `
     var theme = saved === 'light' ? 'light' : 'dark';
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   } catch (e) {}
 `;
 

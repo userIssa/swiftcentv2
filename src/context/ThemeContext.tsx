@@ -28,6 +28,11 @@ function applyDocumentTheme(theme: AppTheme) {
   if (typeof document === 'undefined') return;
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {

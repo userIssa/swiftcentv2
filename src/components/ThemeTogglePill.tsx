@@ -6,13 +6,15 @@ import type { AppTheme } from '@/context/ThemeContext';
 interface ThemeTogglePillProps {
   theme: AppTheme;
   onChange: (nextTheme: AppTheme) => void;
+  size?: 'sm' | 'md';
 }
 
-function SunGlyph({ active }: { active: boolean }) {
+function SunGlyph({ active, size = 'md' }: { active: boolean; size?: 'sm' | 'md' }) {
+  const isSm = size === 'sm';
   return (
     <svg
       viewBox="0 0 24 24"
-      className={`w-[22px] h-[22px] transition-all duration-300 ${
+      className={`${isSm ? 'w-[16px] h-[16px]' : 'w-[22px] h-[22px]'} transition-all duration-300 ${
         active
           ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.65)] scale-105'
           : 'text-amber-300/60 scale-95'
@@ -35,11 +37,12 @@ function SunGlyph({ active }: { active: boolean }) {
   );
 }
 
-function MoonGlyph({ active }: { active: boolean }) {
+function MoonGlyph({ active, size = 'md' }: { active: boolean; size?: 'sm' | 'md' }) {
+  const isSm = size === 'sm';
   return (
     <svg
       viewBox="0 0 24 24"
-      className={`w-[20px] h-[20px] transition-all duration-300 ${
+      className={`${isSm ? 'w-[15px] h-[15px]' : 'w-[20px] h-[20px]'} transition-all duration-300 ${
         active
           ? 'text-slate-100 drop-shadow-[0_0_8px_rgba(186,230,253,0.75)] scale-105'
           : 'text-slate-400/70 scale-95'
@@ -52,8 +55,9 @@ function MoonGlyph({ active }: { active: boolean }) {
   );
 }
 
-export function ThemeTogglePill({ theme, onChange }: ThemeTogglePillProps) {
+export function ThemeTogglePill({ theme, onChange, size = 'md' }: ThemeTogglePillProps) {
   const isDark = theme === 'dark';
+  const isSm = size === 'sm';
 
   return (
     <button
@@ -74,7 +78,9 @@ export function ThemeTogglePill({ theme, onChange }: ThemeTogglePillProps) {
           ? 'inset 0 1px 2px rgba(255, 255, 255, 0.28), inset 0 -2px 6px rgba(56, 189, 248, 0.15), 0 8px 24px rgba(0, 0, 0, 0.45)'
           : 'inset 0 1.5px 3px rgba(255, 255, 255, 0.9), inset 0 -2px 6px rgba(147, 197, 253, 0.35), 0 8px 20px rgba(59, 130, 246, 0.12)',
       }}
-      className="relative inline-flex items-center w-[100px] h-[48px] rounded-full p-1 backdrop-blur-2xl select-none cursor-pointer transition-all duration-300 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60"
+      className={`relative inline-flex items-center ${
+        isSm ? 'w-[74px] h-[34px] p-0.5' : 'w-[100px] h-[48px] p-1'
+      } rounded-full backdrop-blur-2xl select-none cursor-pointer transition-all duration-300 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60`}
     >
       {/* Liquid Glass Sliding Thumb Lens */}
       <span
@@ -89,17 +95,23 @@ export function ThemeTogglePill({ theme, onChange }: ThemeTogglePillProps) {
           boxShadow: isDark
             ? 'inset 0 1.5px 2px rgba(255, 255, 255, 0.42), inset 0 -1.5px 3px rgba(56, 189, 248, 0.2), 0 4px 12px rgba(0, 0, 0, 0.35)'
             : 'inset 0 1.5px 2px rgba(255, 255, 255, 0.95), inset 0 -1.5px 3px rgba(147, 197, 253, 0.28), 0 4px 12px rgba(15, 23, 42, 0.1)',
-          transform: isDark ? 'translateX(44px)' : 'translateX(0px)',
+          transform: isDark
+            ? isSm
+              ? 'translateX(36px)'
+              : 'translateX(44px)'
+            : 'translateX(0px)',
         }}
-        className="absolute left-1 top-1 w-[46px] h-[38px] rounded-full backdrop-blur-xl transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+        className={`absolute ${
+          isSm ? 'left-0.5 top-0.5 w-[34px] h-[28px]' : 'left-1 top-1 w-[46px] h-[38px]'
+        } rounded-full backdrop-blur-xl transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]`}
       />
 
       {/* Sun (Light Mode) & Moon (Dark Glass) Positions */}
-      <span className="relative z-10 w-[46px] h-full flex items-center justify-center">
-        <SunGlyph active={!isDark} />
+      <span className={`relative z-10 ${isSm ? 'w-[34px]' : 'w-[46px]'} h-full flex items-center justify-center`}>
+        <SunGlyph active={!isDark} size={size} />
       </span>
-      <span className="relative z-10 w-[46px] h-full flex items-center justify-center">
-        <MoonGlyph active={isDark} />
+      <span className={`relative z-10 ${isSm ? 'w-[34px]' : 'w-[46px]'} h-full flex items-center justify-center`}>
+        <MoonGlyph active={isDark} size={size} />
       </span>
     </button>
   );

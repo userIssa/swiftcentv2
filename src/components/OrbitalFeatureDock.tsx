@@ -14,6 +14,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { SparkleStar } from '@/components/SparkleStar';
+import { useTheme } from '@/context/ThemeContext';
 
 export interface OrbitalFeatureItem {
   id: string;
@@ -134,6 +135,7 @@ function renderOrbIcon(icon: OrbitalFeatureItem['icon'], isActive: boolean) {
 }
 
 export function OrbitalFeatureDock() {
+  const { isDark } = useTheme();
   const [activeIndex, setActiveIndex] = useState(DEFAULT_ORBITAL_INDEX);
   const [dragDeltaX, setDragDeltaX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -286,7 +288,11 @@ export function OrbitalFeatureDock() {
             onClick={() => setActiveIndex((prev) => clampOrbitalIndex(prev - 1))}
             disabled={activeIndex === 0}
             aria-label="Slide capabilities left"
-            className="w-8 h-8 rounded-full bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-slate-400 hover:text-white hover:border-sky-400/40 disabled:opacity-25 disabled:pointer-events-none transition-all cursor-pointer"
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+              isDark
+                ? 'bg-white/[0.03] border border-white/[0.08] text-slate-400 hover:text-white hover:border-sky-400/40 disabled:opacity-25'
+                : 'bg-white border border-slate-200 text-slate-500 hover:text-slate-900 hover:border-sky-400/60 shadow-sm disabled:opacity-30'
+            } disabled:pointer-events-none`}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -313,7 +319,9 @@ export function OrbitalFeatureDock() {
           {/* Fixed Center Radiant Aura */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-sky-400/25 blur-xl animate-pulse"
+            className={`pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full blur-xl animate-pulse ${
+              isDark ? 'bg-sky-400/25' : 'bg-sky-400/20'
+            }`}
           />
 
           {/* Sliding Track anchored around exact center */}
@@ -362,8 +370,10 @@ export function OrbitalFeatureDock() {
                       isDragging ? '' : 'transition-all duration-300 ease-out'
                     } ${
                       isFocused
-                        ? 'w-12 h-12 bg-gradient-to-tr from-sky-400/25 via-blue-500/30 to-sky-300/35 border border-sky-300/60 text-white shadow-[0_0_28px_rgba(56,189,248,0.55)] z-10'
-                        : 'w-10 h-10 bg-white/[0.04] border border-white/[0.09] text-slate-400 hover:text-white hover:border-sky-400/45 shadow-lg'
+                        ? 'w-12 h-12 bg-gradient-to-tr from-sky-400/35 via-blue-600/40 to-sky-300/40 border border-sky-300/80 text-white shadow-[0_0_28px_rgba(56,189,248,0.55)] z-10'
+                        : isDark
+                        ? 'w-10 h-10 bg-white/[0.04] border border-white/[0.09] text-slate-400 hover:text-white hover:border-sky-400/45 shadow-lg'
+                        : 'w-10 h-10 bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-sky-400/50 shadow-sm'
                     }`}
                   >
                     {renderOrbIcon(item.icon, isFocused)}
@@ -381,7 +391,11 @@ export function OrbitalFeatureDock() {
             onClick={() => setActiveIndex((prev) => clampOrbitalIndex(prev + 1))}
             disabled={activeIndex === ORBITAL_FEATURES.length - 1}
             aria-label="Slide capabilities right"
-            className="w-8 h-8 rounded-full bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-slate-400 hover:text-white hover:border-sky-400/40 disabled:opacity-25 disabled:pointer-events-none transition-all cursor-pointer"
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+              isDark
+                ? 'bg-white/[0.03] border border-white/[0.08] text-slate-400 hover:text-white hover:border-sky-400/40 disabled:opacity-25'
+                : 'bg-white border border-slate-200 text-slate-500 hover:text-slate-900 hover:border-sky-400/60 shadow-sm disabled:opacity-30'
+            } disabled:pointer-events-none`}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -391,14 +405,22 @@ export function OrbitalFeatureDock() {
 
       {/* Live Focused Capability Readout */}
       <div className="mt-4 max-w-md mx-auto">
-        <div className="px-4 py-2.5 rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl shadow-lg">
+        <div
+          className={`px-4 py-2.5 rounded-2xl backdrop-blur-xl shadow-lg transition-colors ${
+            isDark
+              ? 'bg-white/[0.03] border border-white/[0.08]'
+              : 'bg-white/95 border border-slate-200/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)]'
+          }`}
+        >
           <div className="flex items-center justify-center gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-300/90 bg-sky-400/10 border border-sky-400/20 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-400 bg-sky-500/10 border border-sky-400/20 px-2 py-0.5 rounded-full">
               {focusedFeature.tag}
             </span>
-            <span className="text-xs font-semibold text-white">{focusedFeature.title}</span>
+            <span className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              {focusedFeature.title}
+            </span>
           </div>
-          <p className="mt-1 text-[11.5px] text-slate-400 leading-relaxed">
+          <p className={`mt-1 text-[11.5px] leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             {focusedFeature.description}
           </p>
         </div>
@@ -414,7 +436,9 @@ export function OrbitalFeatureDock() {
               className={`h-1.5 rounded-full transition-all duration-200 cursor-pointer ${
                 idx === focusedIndex
                   ? 'w-5 bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]'
-                  : 'w-1.5 bg-white/20 hover:bg-white/40'
+                  : isDark
+                  ? 'w-1.5 bg-white/20 hover:bg-white/40'
+                  : 'w-1.5 bg-slate-300 hover:bg-slate-400'
               }`}
             />
           ))}

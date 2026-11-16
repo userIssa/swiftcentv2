@@ -3,898 +3,886 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import {
-  ReceiptText,
-  FileText,
-  ShieldCheck,
-  CreditCard,
-  Building,
   ArrowRight,
-  CheckCircle2,
-  Zap,
-  Lock,
-  Layers,
-  Calculator,
-  ChevronRight,
-  Users,
-  Coins,
-  FileCheck2,
   TrendingUp,
-  Mic,
-  Globe,
-  Package,
-  Landmark,
+  Compass,
+  SlidersHorizontal,
+  ShieldCheck,
+  Mail,
+  Check,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { OrbitalFeatureDock } from '@/components/OrbitalFeatureDock';
-import { SparkleStar } from '@/components/SparkleStar';
+import { useTheme } from '@/context/ThemeContext';
+import { ThemeTogglePill } from '@/components/ThemeTogglePill';
+
+const STEPS = [
+  {
+    id: 0,
+    stepNumber: '01',
+    title: 'Draft Smart Proposals',
+    description:
+      'Create itemized proposals, configure custom deliverables, and let clients review transparent scopes of work without friction or delay.',
+    icon: Compass,
+    image: '/images/step-01.jpg',
+  },
+  {
+    id: 1,
+    stepNumber: '02',
+    title: 'Track Receivables Aging',
+    description:
+      'Evaluate real-time revenue, aging schedules, and cashflow trends before making critical corporate financial decisions.',
+    icon: TrendingUp,
+    image: '/images/step-02.jpg',
+  },
+  {
+    id: 2,
+    stepNumber: '03',
+    title: 'Approve Client Portals',
+    description:
+      'Clients review itemized deliverables, accept proposals in tokenized portals, and transition accepted work into finalized invoices with one-click execution.',
+    icon: SlidersHorizontal,
+    image: '/images/step-03.jpg',
+  },
+  {
+    id: 3,
+    stepNumber: '04',
+    title: 'Settle Ledger Payments',
+    description:
+      'Protect cash flow with deterministic integer-cent math, immutable audit ledgers, and bank-grade payment security across every single issued financial document.',
+    icon: ShieldCheck,
+    image: '/images/step-04.jpg',
+  },
+];
 
 export default function LandingPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<
-    'voice' | 'quotes' | 'invoices' | 'multibusiness' | 'global' | 'precision'
-  >('voice');
+  const { theme, isDark, setTheme } = useTheme();
+  const [hoveredStep, setHoveredStep] = useState(1);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#030611] text-slate-100 selection:bg-sky-500/30 selection:text-white font-sans relative overflow-x-hidden">
-      {/* Atmospheric Luminous Aura & Concentric Radial Vortex */}
-      <div className="absolute top-[280px] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[680px] h-[680px] rounded-full border border-sky-400/[0.12] pointer-events-none shadow-[0_0_100px_rgba(56,189,248,0.12)_inset]" />
-      <div className="absolute top-[280px] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[980px] h-[980px] rounded-full border border-sky-400/[0.06] pointer-events-none" />
-      <div className="absolute top-[280px] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1300px] h-[1300px] rounded-full border border-white/[0.02] pointer-events-none" />
-      <div className="absolute top-[200px] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[450px] bg-gradient-to-b from-sky-400/20 via-blue-600/10 to-transparent blur-[120px] pointer-events-none rounded-full" />
-
-      {/* Permanently Floating Glass Pill Header / Navigation */}
-      <header className="fixed top-5 left-0 right-0 z-50 px-4 sm:px-6 pointer-events-none">
-        <div className="max-w-4xl mx-auto rounded-full bg-[#090e1c]/85 border border-white/[0.12] backdrop-blur-2xl px-6 py-2.5 flex items-center justify-between shadow-[0_16px_40px_rgba(0,0,0,0.7)] pointer-events-auto">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2.5 group">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-[0_0_16px_rgba(56,189,248,0.5)]">
-              <SparkleStar className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className="font-semibold text-sm tracking-tight text-white group-hover:text-sky-200 transition-colors">
-              SwiftCent
-            </span>
-          </Link>
-
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-7 text-xs font-normal text-slate-400">
-            <a href="#capabilities" className="hover:text-white transition-colors">
-              Capabilities
-            </a>
-            <a href="#multi-business" className="hover:text-white transition-colors">
-              Multi-Business
-            </a>
-            <a
-              href="#multi-business"
-              onClick={() => setActiveTab('precision')}
-              className="hover:text-white transition-colors"
-            >
-              Math Engine
-            </a>
-            <a href="#use-cases" className="hover:text-white transition-colors">
-              Who It's For
-            </a>
-            <a href="#comparison" className="hover:text-white transition-colors">
-              Why Switch
-            </a>
-          </nav>
-
-          {/* Right Action Buttons */}
-          <div className="flex items-center space-x-3">
-            {user ? (
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center space-x-1.5 bg-[#c8e2fb] hover:bg-white text-[#051124] font-semibold px-4 py-1.5 rounded-full text-xs shadow-[0_0_20px_rgba(200,226,251,0.4)] transition-all transform hover:scale-105 active:scale-95"
-              >
-                <span>Dashboard ({user.name.split(' ')[0]})</span>
-                <ArrowRight className="w-3 h-3" />
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="text-xs font-medium text-slate-300 hover:text-white px-2 py-1 transition-colors hidden sm:inline-block"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/login"
-                  className="inline-flex items-center space-x-1.5 bg-[#c8e2fb] hover:bg-white text-[#051124] font-semibold px-4 py-1.5 rounded-full text-xs shadow-[0_0_25px_rgba(200,226,251,0.4)] transition-all transform hover:scale-105 active:scale-95"
-                >
-                  <span>Free Trial</span>
-                </Link>
-              </>
-            )}
+    <div
+      className={`min-h-screen font-sans antialiased transition-colors duration-300 ${
+        isDark ? 'bg-[#0d1117] text-slate-100' : 'bg-[#ffffff] text-slate-900'
+      }`}
+    >
+      {/* ----------------- TOP NAVIGATION BAR ----------------- */}
+      <header className="mx-auto max-w-[1360px] px-6 sm:px-12 pt-6 pb-4 flex items-center justify-between text-sm">
+        {/* Brand Logo */}
+        <Link href="/" className="flex items-center space-x-2 group">
+          <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-base shadow-sm">
+            S
           </div>
+          <span className={`font-bold text-lg tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            SwiftCent
+          </span>
+        </Link>
+
+        {/* Right Controls */}
+        <div className="flex items-center space-x-4">
+          <ThemeTogglePill theme={theme} onChange={setTheme} size="sm" />
+          <Link
+            href={user ? '/dashboard' : '/login'}
+            className="px-4 py-2 rounded-full text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:opacity-90 transition-opacity shadow-sm"
+          >
+            {user ? 'Dashboard' : 'Sign In'}
+          </Link>
         </div>
       </header>
 
-      {/* Hero Section (Matching Reference Mockup Aesthetic) */}
-      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 text-center max-w-4xl mx-auto">
-        {/* Floating Top Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-xl text-xs text-slate-300 font-normal tracking-wide shadow-inner mb-8">
-          <SparkleStar className="w-3 h-3 text-sky-300" />
-          <span>#1 Multi-Entity Invoicing & Billing Engine</span>
+      {/* =========================================================================
+          HERO SECTION (SWIFTCENT ASYMMETRICAL NOTCHED SHELF HERO)
+         ========================================================================= */}
+      <section className="mx-auto max-w-[1360px] px-4 sm:px-8 pt-4 pb-16 sm:pb-24">
+        {/* Outer Canvas Container */}
+        <div className="relative mx-auto max-w-[1240px]">
+          {/* Desktop Layout (lg+) with authentic SwiftCent notched shelf cutout */}
+          <div className="hidden lg:grid lg:grid-cols-12 items-stretch min-h-[600px]">
+            {/* Left Column (col-span-7): Top Card + Bottom Stats Shelf */}
+            <div className="lg:col-span-7 flex flex-col justify-between">
+              {/* Top Hero Card */}
+              <div
+                className={`relative p-10 xl:p-14 rounded-tl-[44px] rounded-bl-[44px] transition-colors ${
+                  isDark ? 'bg-[#181f2a]' : 'bg-[#d3d7da]'
+                }`}
+              >
+                {/* Fillet in the bottom-right corner connecting to right column */}
+                <div className="absolute top-full right-0 w-8 h-8 pointer-events-none overflow-hidden z-20">
+                  <svg
+                    viewBox="0 0 32 32"
+                    className={`w-8 h-8 ${isDark ? 'text-[#181f2a]' : 'text-[#d3d7da]'}`}
+                    fill="currentColor"
+                  >
+                    <path d="M 0 0 A 32 32 0 0 1 32 32 L 32 0 Z" />
+                  </svg>
+                </div>
+
+                <div className="space-y-6 max-w-xl">
+                  {/* Top Pill Badge */}
+                  <div>
+                    <div className="inline-flex items-center rounded-full bg-[#2a3038] text-xs px-4 py-1.5 shadow-sm">
+                      <span className="text-white/75 font-normal">5000+ invoices settled today</span>
+                      <span className="font-semibold text-white ml-2.5 flex items-center gap-1.5">
+                        <span>Start now</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Headline */}
+                  <h1
+                    className={`text-5xl xl:text-[62px] font-bold tracking-[-0.035em] leading-[1.08] ${
+                      isDark ? 'text-white' : 'text-slate-900'
+                    }`}
+                  >
+                    Automate Your Invoicing <br />
+                    Faster with <br />
+                    SwiftCent
+                  </h1>
+
+                  {/* Subtitle */}
+                  <p
+                    className={`text-sm xl:text-base leading-relaxed max-w-md font-normal ${
+                      isDark ? 'text-slate-300' : 'text-slate-600'
+                    }`}
+                  >
+                    Speed up your cash flow with our high-precision billing engine for enterprises. Enjoy
+                    deterministic, exact-cent calculations for a seamless, transparent invoice experience.
+                  </p>
+
+                  {/* Two Action Buttons */}
+                  <div className="pt-4 flex items-center gap-3.5">
+                    <Link
+                      href="/dashboard"
+                      className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white text-slate-900 font-semibold text-sm shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95"
+                    >
+                      <span>Start billing now</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+
+                    <a
+                      href="#learn-more"
+                      className="inline-flex items-center px-7 py-3.5 rounded-full bg-[#1e2024] hover:bg-black text-white font-semibold text-sm transition-all transform hover:scale-105 active:scale-95 shadow-md"
+                    >
+                      Learn more
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Cutout Shelf & Stats Row */}
+              <div className="pt-8 pb-4 pl-4 pr-6">
+                <div className="grid grid-cols-4 gap-6 max-w-xl">
+                  <div className="space-y-1">
+                    <div
+                      className={`text-3xl font-bold tracking-tight ${
+                        isDark ? 'text-white' : 'text-slate-900'
+                      }`}
+                    >
+                      100%
+                    </div>
+                    <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Precision</div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div
+                      className={`text-3xl font-bold tracking-tight ${
+                        isDark ? 'text-white' : 'text-slate-900'
+                      }`}
+                    >
+                      &lt;60s
+                    </div>
+                    <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Settlement</div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div
+                      className={`text-3xl font-bold tracking-tight ${
+                        isDark ? 'text-white' : 'text-slate-900'
+                      }`}
+                    >
+                      10k+
+                    </div>
+                    <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Invoices</div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div
+                      className={`text-3xl font-bold tracking-tight ${
+                        isDark ? 'text-white' : 'text-slate-900'
+                      }`}
+                    >
+                      99.9%
+                    </div>
+                    <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Uptime</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column (col-span-5): Full Height Card with 3D Robot Mascot */}
+            <div
+              className={`lg:col-span-5 relative rounded-tr-[44px] rounded-br-[44px] rounded-bl-[44px] flex items-end justify-center overflow-hidden transition-colors ${
+                isDark ? 'bg-[#181f2a]' : 'bg-[#d3d7da]'
+              }`}
+            >
+              <img
+                src="/images/robot-hd.png"
+                alt="SwiftCent 3D Mascot Character"
+                className="w-full h-auto max-h-[640px] object-contain object-bottom select-none pointer-events-none drop-shadow-2xl"
+              />
+            </div>
+          </div>
+
+          {/* Mobile & Tablet Layout (< lg) */}
+          <div className="lg:hidden space-y-8">
+            <div
+              className={`rounded-[36px] overflow-hidden p-8 sm:p-12 transition-colors ${
+                isDark ? 'bg-[#181f2a]' : 'bg-[#d3d7da]'
+              }`}
+            >
+              <div className="space-y-6">
+                {/* Badge */}
+                <div className="inline-flex items-center rounded-full bg-[#2a3038] text-xs px-4 py-1.5 shadow-sm">
+                  <span className="text-white/75 font-normal">5000+ invoices settled today</span>
+                  <span className="font-semibold text-white ml-2.5 flex items-center gap-1.5">
+                    <span>Start now</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+
+                {/* Headline */}
+                <h1
+                  className={`text-4xl sm:text-5xl font-bold tracking-[-0.035em] leading-[1.1] ${
+                    isDark ? 'text-white' : 'text-slate-900'
+                  }`}
+                >
+                  Automate Your Invoicing <br />
+                  Faster with <br />
+                  SwiftCent
+                </h1>
+
+                {/* Subtitle */}
+                <p
+                  className={`text-sm sm:text-base leading-relaxed font-normal ${
+                    isDark ? 'text-slate-300' : 'text-slate-600'
+                  }`}
+                >
+                  Speed up your cash flow with our high-precision billing engine for enterprises. Enjoy
+                  deterministic, exact-cent calculations for a seamless, transparent invoice experience.
+                </p>
+
+                {/* Buttons */}
+                <div className="pt-2 flex flex-wrap items-center gap-3.5">
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-900 font-semibold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all"
+                  >
+                    <span>Start billing now</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <a
+                    href="#learn-more"
+                    className="inline-flex items-center px-6 py-3 rounded-full bg-[#1e2024] text-white font-semibold text-xs sm:text-sm transition-all shadow-md"
+                  >
+                    Learn more
+                  </a>
+                </div>
+              </div>
+
+              {/* Robot mascot image */}
+              <div className="pt-8 flex justify-center">
+                <img
+                  src="/images/robot-hd.png"
+                  alt="SwiftCent 3D Mascot Character"
+                  className="w-full max-w-[340px] sm:max-w-[420px] h-auto object-contain object-bottom drop-shadow-xl"
+                />
+              </div>
+            </div>
+
+            {/* Stats below card on mobile */}
+            <div className="px-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                <div className="space-y-1">
+                  <div
+                    className={`text-2xl sm:text-3xl font-bold tracking-tight ${
+                      isDark ? 'text-white' : 'text-slate-900'
+                    }`}
+                  >
+                    100%
+                  </div>
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Precision</div>
+                </div>
+                <div className="space-y-1">
+                  <div
+                    className={`text-2xl sm:text-3xl font-bold tracking-tight ${
+                      isDark ? 'text-white' : 'text-slate-900'
+                    }`}
+                  >
+                    &lt;60s
+                  </div>
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Settlement</div>
+                </div>
+                <div className="space-y-1">
+                  <div
+                    className={`text-2xl sm:text-3xl font-bold tracking-tight ${
+                      isDark ? 'text-white' : 'text-slate-900'
+                    }`}
+                  >
+                    10k+
+                  </div>
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Invoices</div>
+                </div>
+                <div className="space-y-1">
+                  <div
+                    className={`text-2xl sm:text-3xl font-bold tracking-tight ${
+                      isDark ? 'text-white' : 'text-slate-900'
+                    }`}
+                  >
+                    99.9%
+                  </div>
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Uptime</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-
-        {/* Hero Title (Frosted ice metallic gradient & balanced typography) */}
-        <h1 className="text-4xl sm:text-6xl md:text-[68px] lg:text-[74px] font-medium tracking-[-0.035em] leading-[1.08] text-transparent bg-clip-text bg-gradient-to-b from-white via-[#d6e7f7] to-[#7fa5c7]">
-          The Billing Engine Built for Multi-Brand Precision
-        </h1>
-
-        {/* Subtitle (Concise, low-contrast, refined) */}
-        <p className="mt-6 text-sm sm:text-base text-slate-400 max-w-lg mx-auto font-normal leading-relaxed">
-          Manage all your businesses in one place. Send custom-branded proposals, collect client approvals,
-          and receive card payments with exact penny accuracy.
-        </p>
-
-        {/* Single Focused Primary CTA Button (Matching Reference) */}
-        <div className="mt-9 flex items-center justify-center">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center justify-center gap-2.5 bg-[#c8e2fb] hover:bg-white text-[#051124] font-semibold text-sm px-7 py-3 rounded-full shadow-[0_0_35px_rgba(200,226,251,0.45)] transition-all transform hover:scale-105 active:scale-95"
-          >
-            <SparkleStar className="w-3.5 h-3.5 text-[#051124]" />
-            <span>Start Free Trial</span>
-          </Link>
-        </div>
-
-        {/* The Signature Interactive Orbital Feature Slider */}
-        <OrbitalFeatureDock />
       </section>
 
-      {/* Section 1: Core Platform Pillars (Refined Glassmorphism) */}
-      <section id="capabilities" className="scroll-mt-28 py-24 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto border-t border-white/[0.06]">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <span className="text-[11px] uppercase tracking-[0.2em] text-sky-400 font-semibold mb-2 block">
-            Capabilities
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-medium tracking-tight text-white">
-            Built for Real Business Needs
+      {/* =========================================================================
+          SECTION 2: PROCESS & CORE CAPABILITIES (INSPO: HOW IT WORKS STEPPER)
+         ========================================================================= */}
+      <section id="how-it-works" className="mx-auto max-w-[1360px] px-6 sm:px-12 py-20 sm:py-28">
+        {/* Section Header */}
+        <div className="text-center max-w-2xl mx-auto space-y-4 mb-14 sm:mb-16">
+          {/* Badge with inspo corner accent */}
+          <div className="inline-flex items-center justify-center">
+            <div className="relative inline-block text-xs font-semibold tracking-wider">
+              <div className="absolute -top-2.5 left-0 w-3.5 h-2 border-t-2 border-l-2 border-blue-500 rounded-tl-sm" />
+              <span
+                className={`px-1 text-xs font-semibold uppercase tracking-wider ${
+                  isDark ? 'text-slate-300' : 'text-slate-700'
+                }`}
+              >
+                How It Works
+              </span>
+            </div>
+          </div>
+
+          {/* Heading - explicitly respecting isDark so it can never be white on white */}
+          <h2
+            className={`text-3xl sm:text-4xl lg:text-[44px] font-bold tracking-[-0.03em] leading-tight ${
+              isDark ? 'text-white' : 'text-slate-900'
+            }`}
+          >
+            From Proposal to Settlement — Simplified
           </h2>
-          <p className="mt-3 text-sm text-slate-400 leading-relaxed">
-            Everything you need to send professional proposals, get paid faster, and keep all your businesses organized.
+
+          {/* Subtitle - explicitly respecting isDark */}
+          <p
+            className={`text-sm sm:text-base max-w-xl mx-auto leading-relaxed font-normal ${
+              isDark ? 'text-slate-300' : 'text-slate-600'
+            }`}
+          >
+            Our streamlined engine helps you author, dispatch, and collect receivables without unnecessary complexity.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Card 1: Voice Copilot */}
-          <div className="group bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.07] hover:border-sky-400/30 rounded-2xl p-7 backdrop-blur-xl transition-all shadow-[0_12px_40px_rgba(0,0,0,0.3)]">
-            <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-400/20 text-sky-300 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-              <Mic className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-semibold text-white mb-2">Voice-to-Quote & Invoice AI</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Speak naturally to assign clients, add catalog items, switch currencies, and apply taxes with real-time AI typing captions powered by Gemini Live.
-            </p>
-            <div className="mt-5 pt-4 border-t border-white/[0.05]">
-              <Link href="/invoices/new?voice=1" className="inline-flex items-center gap-1 text-xs text-sky-300 hover:underline font-medium">
-                <span>Try Voice Drafting</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+        {/* Desktop Interactive Expanding Stepper (lg+) with Hover Animation */}
+        <div className="hidden lg:flex items-stretch gap-6 min-h-[460px]">
+          {STEPS.map((step) => {
+            const isHovered = hoveredStep === step.id;
+            const Icon = step.icon;
+
+            return (
+              <div
+                key={step.id}
+                onMouseEnter={() => setHoveredStep(step.id)}
+                onClick={() => setHoveredStep(step.id)}
+                className={`group relative rounded-[28px] transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) cursor-pointer overflow-hidden border ${
+                  isHovered
+                    ? isDark
+                      ? 'flex-[2.3] xl:flex-[2.5] bg-[#1a2536] border-white/20 shadow-2xl shadow-black/60 p-6'
+                      : 'flex-[2.3] xl:flex-[2.5] bg-white border-slate-300 shadow-xl shadow-slate-200/70 p-6'
+                    : isDark
+                      ? 'flex-1 bg-[#131c2a] border-white/10 hover:border-white/20 p-7'
+                      : 'flex-1 bg-[#f8fafc] border-slate-200/90 hover:border-slate-300 hover:bg-slate-100/70 p-7'
+                } flex flex-col justify-between`}
+              >
+                {/* TOP AREA: Image when hovered, Large Step Number when inactive */}
+                <div className="relative">
+                  {/* Big Number (Shown when inactive, fades out when hovered) */}
+                  <div
+                    className={`transition-all duration-300 ${
+                      isHovered
+                        ? 'opacity-0 h-0 overflow-hidden'
+                        : `opacity-100 text-3xl sm:text-4xl font-bold tracking-tight mb-6 ${
+                            isDark
+                              ? 'text-slate-600 group-hover:text-slate-500'
+                              : 'text-slate-300 group-hover:text-slate-400'
+                          }`
+                    }`}
+                  >
+                    {step.stepNumber}
+                  </div>
+
+                  {/* Image Banner (Smoothly scales & reveals when hovered) */}
+                  <div
+                    className={`transition-all duration-500 ease-out overflow-hidden rounded-[20px] shadow-sm ${
+                      isDark ? 'bg-slate-800' : 'bg-slate-100'
+                    } ${
+                      isHovered
+                        ? 'h-[175px] sm:h-[195px] opacity-100 mb-5 scale-100'
+                        : 'h-0 opacity-0 mb-0 scale-95 pointer-events-none'
+                    }`}
+                  >
+                    <img
+                      src={step.image}
+                      alt={step.title}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 select-none"
+                    />
+                  </div>
+                </div>
+
+                {/* BOTTOM AREA: Icon, Title, and Description */}
+                <div className="flex flex-col justify-end">
+                  {/* Icon in Circle Badge */}
+                  <div
+                    className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all duration-300 mb-3.5 ${
+                      isHovered
+                        ? isDark
+                          ? 'border-blue-900/60 bg-blue-950/60 text-blue-400'
+                          : 'border-blue-200 bg-blue-50 text-blue-600 shadow-xs'
+                        : isDark
+                          ? 'border-white/10 bg-slate-900/80 text-slate-400 group-hover:text-slate-300'
+                          : 'border-slate-200 bg-white text-slate-500 group-hover:text-slate-700 shadow-xs'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
+                  </div>
+
+                  {/* Title */}
+                  <h3
+                    className={`font-bold tracking-tight transition-all duration-300 leading-snug ${
+                      isHovered
+                        ? isDark
+                          ? 'text-lg sm:text-xl text-white mb-2'
+                          : 'text-lg sm:text-xl text-slate-900 mb-2'
+                        : isDark
+                          ? 'text-base text-slate-200 group-hover:text-white'
+                          : 'text-base text-slate-800 group-hover:text-slate-900'
+                    }`}
+                  >
+                    {step.title}
+                  </h3>
+
+                  {/* Description (Smoothly reveals when hovered) */}
+                  <div
+                    className={`transition-all duration-400 ease-out ${
+                      isHovered
+                        ? 'opacity-100 max-h-28 mt-1'
+                        : 'opacity-0 max-h-0 overflow-hidden'
+                    }`}
+                  >
+                    <p
+                      className={`text-xs sm:text-sm leading-relaxed font-normal ${
+                        isDark ? 'text-slate-300' : 'text-slate-600'
+                      }`}
+                    >
+                      {step.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Mobile & Tablet Stepper View (< lg) */}
+        <div className="lg:hidden space-y-4">
+          {/* Stepper Tabs */}
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            {STEPS.map((step) => (
+              <button
+                key={step.id}
+                onClick={() => setHoveredStep(step.id)}
+                className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+                  hoveredStep === step.id
+                    ? isDark
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'bg-slate-900 text-white shadow-sm'
+                    : isDark
+                      ? 'bg-slate-800 text-slate-400'
+                      : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {step.stepNumber}
+              </button>
+            ))}
           </div>
 
-          {/* Card 2: Global Currencies & Banking Rails */}
-          <div className="group bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.07] hover:border-sky-400/30 rounded-2xl p-7 backdrop-blur-xl transition-all shadow-[0_12px_40px_rgba(0,0,0,0.3)]">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-400/20 text-indigo-300 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-              <Globe className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-semibold text-white mb-2">Global Currencies & Bank Rails</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Choose your preferred workspace currency, override per quote or invoice, and configure local NUBAN, SEPA IBAN, Sort Code, BSB, IFSC, ACH, or SWIFT details.
-            </p>
-            <div className="mt-5 pt-4 border-t border-white/[0.05]">
-              <Link href="/settings" className="inline-flex items-center gap-1 text-xs text-sky-300 hover:underline font-medium">
-                <span>Configure Rails & Theme</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
+          {/* Active Card Display */}
+          {(() => {
+            const step = STEPS[hoveredStep];
+            const Icon = step.icon;
+            return (
+              <div
+                className={`rounded-[28px] p-6 shadow-md border ${
+                  isDark
+                    ? 'bg-[#1a2536] border-white/20'
+                    : 'bg-white border-slate-200'
+                }`}
+              >
+                <div
+                  className={`w-full h-[180px] rounded-[20px] overflow-hidden mb-6 relative ${
+                    isDark ? 'bg-slate-800' : 'bg-slate-100'
+                  }`}
+                >
+                  <img
+                    src={step.image}
+                    alt={step.title}
+                    className="w-full h-full object-cover select-none"
+                  />
+                </div>
+                <div
+                  className={`w-8 h-8 rounded-full border flex items-center justify-center mb-3 ${
+                    isDark
+                      ? 'border-blue-900/60 bg-blue-950/60 text-blue-400'
+                      : 'border-blue-200 bg-blue-50 text-blue-600'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
+                <h3
+                  className={`text-xl font-bold tracking-tight mb-2 ${
+                    isDark ? 'text-white' : 'text-slate-900'
+                  }`}
+                >
+                  {step.title}
+                </h3>
+                <p
+                  className={`text-xs sm:text-sm leading-relaxed font-normal ${
+                    isDark ? 'text-slate-300' : 'text-slate-600'
+                  }`}
+                >
+                  {step.description}
+                </p>
+              </div>
+            );
+          })()}
+        </div>
+      </section>
 
-          {/* Card 3: Multi-Business Profiles */}
-          <div className="group bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.07] hover:border-sky-400/30 rounded-2xl p-7 backdrop-blur-xl transition-all shadow-[0_12px_40px_rgba(0,0,0,0.3)]">
-            <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-400/20 text-sky-300 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-              <Building className="w-5 h-5" />
+      {/* =========================================================================
+          NEWSLETTER SECTION (ELEGANT FLOATING BENTO CARD)
+         ========================================================================= */}
+      <section className="mx-auto max-w-[1360px] px-6 sm:px-12 py-12 sm:py-16">
+        <div
+          className={`mx-auto max-w-[1240px] rounded-[32px] sm:rounded-[44px] p-8 sm:p-12 lg:p-16 border transition-all ${
+            isDark
+              ? 'bg-[#131c2a] border-white/10 shadow-2xl'
+              : 'bg-[#f8fafc] border-slate-200/90 shadow-xl'
+          }`}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 items-center">
+            {/* Left Column: Visual Banner */}
+            <div className="lg:col-span-5 relative">
+              <div
+                className={`rounded-[24px] sm:rounded-[32px] overflow-hidden aspect-[4/3] relative shadow-md border ${
+                  isDark ? 'border-white/10 bg-slate-900' : 'border-slate-200 bg-white'
+                }`}
+              >
+                <img
+                  src="/images/step-01.jpg"
+                  alt="Billing updates"
+                  className="w-full h-full object-cover select-none"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+              </div>
             </div>
-            <h3 className="text-base font-semibold text-white mb-2">Multi-Business Profiles</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Register multiple brands or LLCs in one account. Upload custom logos, set independent prefixes, and switch active businesses in one click.
-            </p>
-            <div className="mt-5 pt-4 border-t border-white/[0.05]">
-              <Link href="/business" className="inline-flex items-center gap-1 text-xs text-sky-300 hover:underline font-medium">
-                <span>Manage Businesses</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
 
-          {/* Card 4: Quotes Conversion */}
-          <div className="group bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.07] hover:border-sky-400/30 rounded-2xl p-7 backdrop-blur-xl transition-all shadow-[0_12px_40px_rgba(0,0,0,0.3)]">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-400/20 text-blue-300 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-              <FileCheck2 className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-semibold text-white mb-2">Quotes with 1-Click Conversion</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Send clients interactive proposals with 3 customizable templates. Clients approve online and turn the quote into an active invoice in one second.
-            </p>
-            <div className="mt-5 pt-4 border-t border-white/[0.05]">
-              <Link href="/quotes" className="inline-flex items-center gap-1 text-xs text-sky-300 hover:underline font-medium">
-                <span>Explore Quotes</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
+            {/* Right Column: Copy & Signup Form */}
+            <div className="lg:col-span-7 space-y-6">
+              {/* Badge */}
+              <div
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold ${
+                  isDark
+                    ? 'bg-slate-800 text-slate-300'
+                    : 'bg-slate-200/70 text-slate-700'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                <span>STAY UPDATED</span>
+              </div>
 
-          {/* Card 5: Catalog & Client Statements */}
-          <div className="group bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.07] hover:border-sky-400/30 rounded-2xl p-7 backdrop-blur-xl transition-all shadow-[0_12px_40px_rgba(0,0,0,0.3)]">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-400/20 text-purple-300 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-              <Package className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-semibold text-white mb-2">Product Catalog & Client Portals</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Save services and tax presets for 1-click line-item filling, and give clients live portal links with Stripe checkout and account statements.
-            </p>
-            <div className="mt-5 pt-4 border-t border-white/[0.05]">
-              <Link href="/products" className="inline-flex items-center gap-1 text-xs text-sky-300 hover:underline font-medium">
-                <span>Browse Catalog</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
+              {/* Headline */}
+              <h2
+                className={`text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight ${
+                  isDark ? 'text-white' : 'text-slate-900'
+                }`}
+              >
+                Get the latest <br />
+                billing insights
+              </h2>
 
-          {/* Card 6: Guaranteed Math Accuracy */}
-          <div className="group bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.07] hover:border-sky-400/30 rounded-2xl p-7 backdrop-blur-xl transition-all shadow-[0_12px_40px_rgba(0,0,0,0.3)]">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-              <Calculator className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-semibold text-white mb-2">Guaranteed Math Accuracy</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              No awkward $0.01 rounding discrepancies. Subtotal minus Discounts plus Inclusive or Exclusive Taxes always balances to the exact penny.
-            </p>
-            <div className="mt-5 pt-4 border-t border-white/[0.05]">
-              <Link href="/invoices" className="inline-flex items-center gap-1 text-xs text-sky-300 hover:underline font-medium">
-                <span>Review Invoices</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
+              {/* Subtitle */}
+              <p
+                className={`text-sm sm:text-base leading-relaxed max-w-lg font-normal ${
+                  isDark ? 'text-slate-300' : 'text-slate-600'
+                }`}
+              >
+                Join our newsletter to receive the latest billing releases, modern invoicing workflows,
+                and financial updates directly in your inbox.
+              </p>
+
+              {/* Email Subscription Form */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (newsletterEmail) setSubscribed(true);
+                }}
+                className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-md"
+              >
+                <div className="relative flex-1">
+                  <Mail
+                    className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${
+                      isDark ? 'text-slate-400' : 'text-slate-400'
+                    }`}
+                  />
+                  <input
+                    type="email"
+                    required
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    placeholder="Your email address"
+                    className={`w-full pl-11 pr-4 py-3.5 rounded-full text-xs sm:text-sm border transition-all outline-none ${
+                      isDark
+                        ? 'bg-[#0f1724] border-white/10 text-white placeholder-slate-500 focus:border-blue-500'
+                        : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 shadow-xs'
+                    }`}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className={`px-7 py-3.5 rounded-full font-semibold text-xs sm:text-sm transition-all transform hover:scale-105 active:scale-95 shadow-md flex items-center justify-center gap-2 ${
+                    isDark
+                      ? 'bg-white text-slate-900 hover:bg-slate-100'
+                      : 'bg-[#181c24] text-white hover:bg-black'
+                  }`}
+                >
+                  {subscribed ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-500" />
+                      <span>Subscribed!</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Subscribe</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Section 2: Interactive Capability Tabs */}
-      <section id="multi-business" className="scroll-mt-28 py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto border-t border-white/[0.06]">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
-          <div>
-            <span className="text-[11px] uppercase tracking-[0.2em] text-sky-400 font-semibold mb-1 block">
-              Experience
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-medium text-white tracking-tight">
-              Designed for You and Your Clients
-            </h2>
-          </div>
-
-          {/* Frosted Glass Tabs */}
-          <div className="flex flex-wrap items-center justify-center bg-white/[0.03] p-1 rounded-2xl sm:rounded-full border border-white/[0.08] text-xs font-medium backdrop-blur-xl gap-1">
-            <button
-              onClick={() => setActiveTab('voice')}
-              className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-                activeTab === 'voice' ? 'bg-[#c8e2fb] text-[#051124] font-semibold shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Voice Copilot
-            </button>
-            <button
-              onClick={() => setActiveTab('global')}
-              className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-                activeTab === 'global' ? 'bg-[#c8e2fb] text-[#051124] font-semibold shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Global Rails
-            </button>
-            <button
-              onClick={() => setActiveTab('quotes')}
-              className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-                activeTab === 'quotes' ? 'bg-[#c8e2fb] text-[#051124] font-semibold shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Quotes
-            </button>
-            <button
-              onClick={() => setActiveTab('invoices')}
-              className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-                activeTab === 'invoices' ? 'bg-[#c8e2fb] text-[#051124] font-semibold shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Invoices
-            </button>
-            <button
-              onClick={() => setActiveTab('multibusiness')}
-              className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-                activeTab === 'multibusiness' ? 'bg-[#c8e2fb] text-[#051124] font-semibold shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Multi-Business
-            </button>
-            <button
-              onClick={() => setActiveTab('precision')}
-              className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-                activeTab === 'precision' ? 'bg-[#c8e2fb] text-[#051124] font-semibold shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Math Engine
-            </button>
-          </div>
-        </div>
-
-        {/* Tab 0: Voice Copilot */}
-        {activeTab === 'voice' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.08] rounded-3xl p-8 lg:p-12 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
-            <div className="space-y-4">
-              <span className="text-[11px] uppercase tracking-wider font-semibold text-sky-300 bg-sky-500/10 border border-sky-400/20 px-3 py-1 rounded-full">
-                Gemini Live Copilot
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-medium text-white tracking-tight">
-                Speak Your Draft Into Existence
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-normal">
-                Stop clicking through slow forms. Dictate your quote or invoice hands-free and watch items, discounts,
-                taxes, and currency updates appear live with real-time AI typing captions.
-              </p>
-              <ul className="space-y-2.5 text-xs text-slate-300 pt-1">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-sky-400 flex-shrink-0" />
-                  <span>Fuzzy-matches existing clients & products or creates new clients inline</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-sky-400 flex-shrink-0" />
-                  <span>Supports instant currency switching per draft (NGN, GBP, EUR, USD, etc.)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-sky-400 flex-shrink-0" />
-                  <span>Strict billing-only guardrails with automatic idle & spoken sign-off closure</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="bg-[#080d1a]/90 rounded-2xl p-6 border border-sky-400/20 text-slate-200 shadow-2xl space-y-4">
-              <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-xs font-semibold text-white">Voice Draft Copilot · Live</span>
+      {/* =========================================================================
+          FOOTER (FULL-WIDTH PAGE EXTENSION WITH PARTICLE MOUNTAIN & MONUMENTAL TYPOGRAPHY)
+         ========================================================================= */}
+      <footer className="w-full bg-[#0c0d12] text-slate-200 relative overflow-hidden mt-10 sm:mt-14 border-t border-white/10">
+        {/* Top Row: Brand Info (Left) + Nav Columns (Right) */}
+        <div className="relative z-10 mx-auto max-w-[1360px] px-6 sm:px-12 pt-8 sm:pt-10 lg:pt-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+            {/* Left Brand Column (col-span-5) */}
+            <div className="lg:col-span-5 space-y-3">
+              {/* Brand Logo & Name */}
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center font-bold text-base shadow-sm">
+                  S
                 </div>
-                <span className="text-[10px] font-semibold text-sky-300 bg-sky-400/10 border border-sky-400/20 px-2 py-0.5 rounded-full">
-                  Speaking...
+                <span className="font-bold text-xl tracking-tight text-white">
+                  SwiftCent
                 </span>
               </div>
-              <div className="rounded-xl bg-white/[0.04] border border-white/[0.08] p-3.5 text-xs text-slate-200 leading-relaxed">
-                &ldquo;Added 2 Engineering Sprints at ₦750,000 each for Acme Labs with 7.5% VAT and net-14 terms.&rdquo;
-                <span className="inline-block w-[2px] h-[1em] ml-1 bg-sky-300 animate-pulse align-text-bottom" />
-              </div>
-              <div className="space-y-2 text-[11px]">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                  <span>Assigned client Acme Labs · Currency switched to NGN</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-500/10 border border-sky-400/20 text-sky-200 font-medium">
-                  <SparkleStar className="w-3 h-3 text-sky-300 shrink-0" />
-                  <span>Total calculated: ₦1,612,500.00 (penny-exact)</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Tab 1: Global Rails & Multi-Currency */}
-        {activeTab === 'global' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.08] rounded-3xl p-8 lg:p-12 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
-            <div className="space-y-4">
-              <span className="text-[11px] uppercase tracking-wider font-semibold text-indigo-300 bg-indigo-500/10 border border-indigo-400/20 px-3 py-1 rounded-full">
-                Borderless Billing
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-medium text-white tracking-tight">
-                Built for Every Country & Currency
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-normal">
-                No US-only lock-in. Pick any preferred business currency, switch currencies per quote or invoice,
-                and display the exact local bank settlement fields your international clients expect.
+              {/* Mission Statement */}
+              <p className="text-xs sm:text-sm text-slate-400 max-w-sm leading-relaxed font-normal">
+                Enterprise billing tools and precision infrastructure for teams who move fast, every single day.
               </p>
-              <ul className="space-y-2.5 text-xs text-slate-300 pt-1">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-                  <span>Searchable flag selectors for global currencies, countries & banking rails</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-                  <span>Adapts fields for NUBAN, SEPA IBAN, Sort Code, BSB, IFSC, EFT & ACH</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-                  <span>Dark Glass default theme with 1-click liquid-glass Light Mode in Settings</span>
-                </li>
-              </ul>
-            </div>
 
-            <div className="bg-[#080d1a]/90 rounded-2xl p-6 border border-white/[0.08] space-y-3 text-xs shadow-2xl">
-              <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-                <div className="flex items-center gap-2 text-white font-semibold">
-                  <Landmark className="w-4 h-4 text-sky-300" />
-                  <span>Regional Bank Rail Presets</span>
-                </div>
-                <span className="text-[10px] text-slate-400">Auto-mapped to Invoice Footer</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                {[
-                  { flag: '🇳🇬', label: 'Nigeria & Africa', rail: 'NUBAN / SWIFT' },
-                  { flag: '🇪🇺', label: 'Europe', rail: 'SEPA / IBAN' },
-                  { flag: '🇬🇧', label: 'United Kingdom', rail: 'Sort Code / BACS' },
-                  { flag: '🇺🇸', label: 'United States', rail: 'ACH / Wire' },
-                ].map((r) => (
-                  <div
-                    key={r.label}
-                    className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] space-y-1"
-                  >
-                    <div className="flex items-center gap-1.5 font-semibold text-white">
-                      <span>{r.flag}</span>
-                      <span>{r.label}</span>
-                    </div>
-                    <div className="text-[10.5px] text-sky-300">{r.rail}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 1: Quotes */}
-        {activeTab === 'quotes' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.08] rounded-3xl p-8 lg:p-12 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
-            <div className="space-y-4">
-              <span className="text-[11px] uppercase tracking-wider font-semibold text-sky-300 bg-sky-500/10 border border-sky-400/20 px-3 py-1 rounded-full">
-                Interactive Quotes
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-medium text-white tracking-tight">
-                Win Clients with Branded Proposals
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-normal">
-                Send custom estimates directly from your registered brand. Clients receive a private, secure link where they can review
-                the scope of work and formally approve online in seconds.
-              </p>
-              <ul className="space-y-2.5 text-xs text-slate-300 pt-1">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-sky-400 flex-shrink-0" />
-                  <span>Automatic proposal expiration dates for clear decision timelines</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-sky-400 flex-shrink-0" />
-                  <span>Private client review page with one-click "Accept & Approve"</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-sky-400 flex-shrink-0" />
-                  <span>Converts accepted quotes into invoices with zero retyping</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Document Preview Card */}
-            <div className="bg-white rounded-2xl p-6 text-slate-900 shadow-2xl border border-slate-200">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-8 h-8 rounded bg-blue-600 text-white font-bold flex items-center justify-center text-xs">
-                    AI
-                  </div>
-                  <div>
-                    <div className="font-bold text-sm">Apex Interactive Inc.</div>
-                    <div className="text-[11px] text-slate-500">Tax ID: US-APX-987654</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs font-bold text-blue-600">QTE-01004</div>
-                  <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded border border-blue-200">
-                    Approved
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="font-medium text-slate-700">UI/UX Architecture & Prototyping</span>
-                  <span className="font-bold">$15,000.00</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="font-medium text-slate-700">Cloud Platform Deployment</span>
-                  <span className="font-bold">$5,000.00</span>
-                </div>
-                <div className="pt-2 space-y-1 text-[11px] text-slate-500">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span className="font-semibold text-slate-800">$20,000.00</span>
-                  </div>
-                  <div className="flex justify-between text-emerald-600 font-medium">
-                    <span>Client Discount (10%):</span>
-                    <span>-$2,000.00</span>
-                  </div>
-                  <div className="flex justify-between text-slate-900 font-extrabold text-sm pt-2 border-t border-slate-200">
-                    <span>Total Proposal:</span>
-                    <span className="text-blue-600">$18,000.00</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 2: Invoices */}
-        {activeTab === 'invoices' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.08] rounded-3xl p-8 lg:p-12 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
-            <div className="space-y-4">
-              <span className="text-[11px] uppercase tracking-wider font-semibold text-emerald-300 bg-emerald-500/10 border border-emerald-400/20 px-3 py-1 rounded-full">
-                Get Paid Faster
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-medium text-white tracking-tight">
-                Branded Client Portals & Card Checkout
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-normal">
-                Provide your customers with a private payment page featuring your business logo, clear line items,
-                and instant card checkout powered by Stripe.
-              </p>
-              <ul className="space-y-2.5 text-xs text-slate-300 pt-1">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <span>Accept debit and credit cards with instant payment receipts</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <span>Real-time balance tracking and partial payment history</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <span>One-click PDF download for your client's accounting records</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="bg-[#080d1a] rounded-2xl p-6 border border-white/[0.08] text-slate-300 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-white/[0.06] pb-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span className="text-xs font-semibold text-white">Private Payment Portal</span>
-                </div>
-                <span className="text-[10px] text-slate-500">256-bit Encrypted</span>
-              </div>
-              <div className="bg-white/[0.02] p-4 rounded-xl border border-white/[0.06] text-center mb-4">
-                <div className="text-[11px] text-slate-400 uppercase tracking-wider font-medium">
-                  Amount Due
-                </div>
-                <div className="text-3xl font-bold text-white mt-1">$4,850.00</div>
-                <div className="text-xs text-emerald-400 font-medium mt-1">Due in 14 Days</div>
-              </div>
-              <button
-                type="button"
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-2 shadow-lg"
-              >
-                <CreditCard className="w-3.5 h-3.5" />
-                <span>Pay with Card (Stripe Checkout)</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 3: Multi-Business */}
-        {activeTab === 'multibusiness' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.08] rounded-3xl p-8 lg:p-12 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
-            <div className="space-y-4">
-              <span className="text-[11px] uppercase tracking-wider font-semibold text-purple-300 bg-purple-500/10 border border-purple-400/20 px-3 py-1 rounded-full">
-                Multi-Brand
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-medium text-white tracking-tight">
-                Manage Multiple Businesses from One Login
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-normal">
-                Whether you operate multiple LLCs, run separate brands for different client niches, or offer specialized consulting alongside an agency,
-                SwiftCent lets you register unlimited business profiles with custom logos, separate invoice numbers, and individual currencies.
-              </p>
-              <ul className="space-y-2.5 text-xs text-slate-300 pt-1">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span>One-click switcher in top navigation to change active company context</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span>Choose which company issues each quote or invoice with a simple dropdown</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span>Share your client directory across all your businesses seamlessly</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-4 space-y-2 backdrop-blur-md">
-                <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded bg-blue-600 text-white font-bold flex items-center justify-center text-xs">
-                    SC
-                  </div>
-                  <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-semibold">
-                    Active
-                  </span>
-                </div>
-                <div className="font-semibold text-white text-sm">SwiftCent Studios Inc.</div>
-                <div className="text-[11px] text-slate-400">Prefix: SWC-01001</div>
-                <div className="text-[10px] text-sky-400 font-medium">USD • San Francisco</div>
+              {/* Social Links */}
+              <div className="flex items-center space-x-3 pt-0.5">
+                <a
+                  href="https://x.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-xs font-bold text-white transition-all hover:scale-110"
+                  aria-label="X (Twitter)"
+                >
+                  𝕏
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-xs font-bold text-white transition-all hover:scale-110"
+                  aria-label="LinkedIn"
+                >
+                  in
+                </a>
+                <a
+                  href="https://github.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-xs font-bold text-white transition-all hover:scale-110"
+                  aria-label="GitHub"
+                >
+                  gh
+                </a>
               </div>
 
-              <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-4 space-y-2 backdrop-blur-md">
-                <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded bg-purple-600 text-white font-bold flex items-center justify-center text-xs">
-                    AX
-                  </div>
-                  <span className="text-[10px] bg-white/[0.05] text-slate-300 px-2 py-0.5 rounded-full font-semibold">
-                    Registered
-                  </span>
-                </div>
-                <div className="font-semibold text-white text-sm">Apex Interactive LLC</div>
-                <div className="text-[11px] text-slate-400">Prefix: APX-01001</div>
-                <div className="text-[10px] text-purple-300 font-medium">EUR • Berlin</div>
+              {/* Copyright */}
+              <div className="pt-1 text-xs text-slate-500 font-normal">
+                © 2026 SwiftCent Inc. All rights reserved.
+              </div>
+            </div>
+
+            {/* Right Navigation Columns (col-span-7) */}
+            <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
+              {/* Product Column */}
+              <div className="space-y-2">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Product
+                </h4>
+                <ul className="space-y-1.5 text-xs sm:text-sm">
+                  <li>
+                    <a href="#features" className="text-slate-300 hover:text-white transition-colors">
+                      Features
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#pricing" className="text-slate-300 hover:text-white transition-colors">
+                      Pricing
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#changelog" className="text-slate-300 hover:text-white transition-colors">
+                      Changelog
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#integrations" className="text-slate-300 hover:text-white transition-colors">
+                      Integrations
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Company Column */}
+              <div className="space-y-2">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Company
+                </h4>
+                <ul className="space-y-1.5 text-xs sm:text-sm">
+                  <li>
+                    <a href="#about" className="text-slate-300 hover:text-white transition-colors">
+                      About Us
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#careers" className="text-slate-300 hover:text-white transition-colors">
+                      Careers
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#contact" className="text-slate-300 hover:text-white transition-colors">
+                      Contact
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#press" className="text-slate-300 hover:text-white transition-colors">
+                      Press
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Resources Column */}
+              <div className="space-y-2">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Resources
+                </h4>
+                <ul className="space-y-1.5 text-xs sm:text-sm">
+                  <li>
+                    <a href="#docs" className="text-slate-300 hover:text-white transition-colors">
+                      Documentation
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#blogs" className="text-slate-300 hover:text-white transition-colors">
+                      Blogs
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#community" className="text-slate-300 hover:text-white transition-colors">
+                      Community
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#tutorials" className="text-slate-300 hover:text-white transition-colors">
+                      Tutorials
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Legal Column */}
+              <div className="space-y-2">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Legal
+                </h4>
+                <ul className="space-y-1.5 text-xs sm:text-sm">
+                  <li>
+                    <a href="#privacy" className="text-slate-300 hover:text-white transition-colors">
+                      Privacy
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#terms" className="text-slate-300 hover:text-white transition-colors">
+                      Terms
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#security" className="text-slate-300 hover:text-white transition-colors">
+                      Security
+                    </a>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Tab 4: Math Engine */}
-        {activeTab === 'precision' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.08] rounded-3xl p-8 lg:p-12 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
-            <div className="space-y-4">
-              <span className="text-[11px] uppercase tracking-wider font-semibold text-amber-300 bg-amber-500/10 border border-amber-400/20 px-3 py-1 rounded-full">
-                Guaranteed Accuracy
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-medium text-white tracking-tight">
-                Totals You and Your Clients Can Always Trust
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-normal">
-                Have you ever sent an invoice where Subtotal minus Discount didn't match the Total because of rounding?
-                SwiftCent guarantees your discounts, taxes, and grand totals always add up with complete transparency down to the exact penny.
-              </p>
-              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-amber-200/90 space-y-1">
-                <div className="text-white font-semibold">
-                  Subtotal − Total Discount + Total Tax = What Your Client Pays
-                </div>
-                <div className="text-slate-400 text-[11px]">
-                  Always crystal-clear. Verified on every line item.
-                </div>
-              </div>
-            </div>
+        {/* Center Graphic: Luminous Particle Mountain Peak (Full Width) */}
+        <div className="absolute inset-x-0 bottom-0 h-[180px] sm:h-[220px] lg:h-[260px] pointer-events-none select-none z-0 overflow-hidden">
+          <img
+            src="/images/footer-particles.jpg"
+            alt=""
+            className="w-full h-full object-cover object-bottom opacity-85 select-none"
+          />
+          {/* Soft gradient fade on sides and top */}
+          <div className="absolute inset-0 bg-gradient-to-t from-transparent via-[#0c0d12]/30 to-[#0c0d12] pointer-events-none" />
+        </div>
 
-            <div className="bg-[#080d1a] rounded-2xl p-6 border border-white/[0.08] space-y-3 text-xs shadow-2xl">
-              <div className="text-xs uppercase tracking-wider text-slate-400 font-semibold border-b border-white/[0.06] pb-2">
-                Example Live Invoice Summary
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-slate-400">Subtotal:</span>
-                <span className="font-mono text-white">$35,000.00</span>
-              </div>
-              <div className="flex justify-between py-1 text-emerald-400">
-                <span>Client Discount (10%):</span>
-                <span className="font-mono">-$2,000.00</span>
-              </div>
-              <div className="flex justify-between py-1 text-slate-400">
-                <span>Sales Tax (7.5%):</span>
-                <span className="font-mono text-white">+$2,475.00</span>
-              </div>
-              <div className="flex justify-between py-2 border-t border-white/[0.06] font-bold text-sm text-white">
-                <span>Grand Total:</span>
-                <span className="font-mono text-sky-400">$35,475.00</span>
-              </div>
-              <div className="text-[11px] text-emerald-400 flex items-center gap-1.5 pt-1">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Zero math confusion. What you see is exactly what your client pays.</span>
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* Section 3: Built for Real-World Business Models */}
-      <section id="use-cases" className="scroll-mt-28 py-24 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto border-t border-white/[0.06]">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <span className="text-[11px] uppercase tracking-[0.2em] text-sky-400 font-semibold mb-2 block">
-            Who It's For
-          </span>
-          <h2 className="text-3xl font-medium text-white tracking-tight">
-            Built for Modern Businesses
+        {/* Bottom Layer: Monumental Typography Anchored Directly to Page Bottom */}
+        <div className="relative z-10 pt-4 sm:pt-6 pb-0 text-center select-none overflow-hidden leading-none">
+          <h2 className="text-[12vw] sm:text-[13vw] font-bold tracking-[-0.045em] text-white/95 leading-none select-none pointer-events-none font-sans drop-shadow-2xl">
+            SwiftCent
           </h2>
-          <p className="mt-2 text-xs sm:text-sm text-slate-400">
-            Engineered specifically for teams, contractors, and founders who want an easy and flexible billing tool.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-6 hover:border-white/[0.15] transition-colors backdrop-blur-xl">
-            <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-400/20 text-blue-300 flex items-center justify-center mb-4">
-              <Layers className="w-5 h-5" />
-            </div>
-            <h4 className="font-semibold text-white text-sm mb-1.5">Creative & Dev Agencies</h4>
-            <p className="text-xs text-slate-400 leading-relaxed font-normal">
-              Send interactive proposals for discovery and milestone work. Upon client approval, convert them instantly to active invoices.
-            </p>
-          </div>
-
-          <div className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-6 hover:border-white/[0.15] transition-colors backdrop-blur-xl">
-            <div className="w-10 h-10 rounded-lg bg-sky-500/10 border border-sky-400/20 text-sky-300 flex items-center justify-center mb-4">
-              <Building className="w-5 h-5" />
-            </div>
-            <h4 className="font-semibold text-white text-sm mb-1.5">Multi-Brand Founders</h4>
-            <p className="text-xs text-slate-400 leading-relaxed font-normal">
-              Stop paying for 5 different software subscriptions. Manage all your LLCs, DBAs, and ventures from one centralized dashboard.
-            </p>
-          </div>
-
-          <div className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-6 hover:border-white/[0.15] transition-colors backdrop-blur-xl">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 flex items-center justify-center mb-4">
-              <Coins className="w-5 h-5" />
-            </div>
-            <h4 className="font-semibold text-white text-sm mb-1.5">Consultants & Freelancers</h4>
-            <p className="text-xs text-slate-400 leading-relaxed font-normal">
-              Present a high-tier corporate image with custom logos, formal quotes, and direct credit card processing via Stripe.
-            </p>
-          </div>
-
-          <div className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-6 hover:border-white/[0.15] transition-colors backdrop-blur-xl">
-            <div className="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-400/20 text-purple-300 flex items-center justify-center mb-4">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-            <h4 className="font-semibold text-white text-sm mb-1.5">Global B2B Businesses</h4>
-            <p className="text-xs text-slate-400 leading-relaxed font-normal">
-              Multi-currency invoicing (USD, NGN, EUR, GBP, CAD, AUD, INR & custom ISO codes) with regional bank transfer details and permanent audit-ready records.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 4: Sleek Comparison Grid (Replacing Heavy Developer Table) */}
-      <section id="comparison" className="scroll-mt-28 py-24 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto border-t border-white/[0.06]">
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <span className="text-[11px] uppercase tracking-[0.2em] text-sky-400 font-semibold mb-2 block">
-            Why Switch?
-          </span>
-          <h2 className="text-3xl font-medium text-white tracking-tight">
-            SwiftCent vs Traditional Invoicing Systems
-          </h2>
-          <p className="mt-2 text-xs sm:text-sm text-slate-400">
-            A simpler, friendlier experience compared to legacy tools like Invoice Ninja.
-          </p>
-        </div>
-
-        {/* Refined Glass Table */}
-        <div className="bg-gradient-to-b from-white/[0.03] to-white/[0.01] border border-white/[0.08] rounded-2xl overflow-hidden backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs sm:text-sm">
-              <thead className="bg-white/[0.03] text-slate-400 uppercase text-[10px] tracking-wider border-b border-white/[0.06]">
-                <tr>
-                  <th className="px-6 py-4 font-semibold">What You Care About</th>
-                  <th className="px-6 py-4 font-semibold text-sky-300">SwiftCent</th>
-                  <th className="px-6 py-4 font-medium text-slate-500">Traditional Invoicing (e.g. Invoice Ninja)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.04] text-slate-300">
-                <tr className="hover:bg-white/[0.01] transition-colors">
-                  <td className="px-6 py-4 font-medium text-white">AI Voice-to-Document Drafting</td>
-                  <td className="px-6 py-4 text-sky-200 font-medium flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>Gemini Live voice copilot fills line items, clients, taxes & currencies in real time</span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-500">Slow manual typing across multi-tab legacy forms</td>
-                </tr>
-                <tr className="hover:bg-white/[0.01] transition-colors">
-                  <td className="px-6 py-4 font-medium text-white">Global Currencies & Bank Rails</td>
-                  <td className="px-6 py-4 text-sky-200 font-medium flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>Per-document currency switching plus NUBAN, SEPA IBAN, Sort Code, IFSC, BSB, ACH & SWIFT</span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-500">US-only ACH/ABA fields or rigid single-currency workspace lock-in</td>
-                </tr>
-                <tr className="hover:bg-white/[0.01] transition-colors">
-                  <td className="px-6 py-4 font-medium text-white">Managing Multiple Businesses</td>
-                  <td className="px-6 py-4 text-sky-200 font-medium flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>Run all your companies & brands from one simple account</span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-500">Requires paying for separate accounts or expensive enterprise upgrades</td>
-                </tr>
-                <tr className="hover:bg-white/[0.01] transition-colors">
-                  <td className="px-6 py-4 font-medium text-white">Custom Logo & Branding</td>
-                  <td className="px-6 py-4 text-sky-200 font-medium flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>Drag & drop your logo with instant live preview on every document</span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-500">Clunky file uploads with rigid formatting and strict image limits</td>
-                </tr>
-                <tr className="hover:bg-white/[0.01] transition-colors">
-                  <td className="px-6 py-4 font-medium text-white">Math & Rounding Accuracy</td>
-                  <td className="px-6 py-4 text-sky-200 font-medium flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>100% exact math — discounts, taxes, and totals always balance to the penny</span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-500">Frequent $0.01 rounding errors on complex discounts and line taxes</td>
-                </tr>
-                <tr className="hover:bg-white/[0.01] transition-colors">
-                  <td className="px-6 py-4 font-medium text-white">Quotes to Invoices</td>
-                  <td className="px-6 py-4 text-sky-200 font-medium flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>Clients approve proposals online and turn them into invoices in 1 click</span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-500">Manual back-and-forth emails and retyping data into new invoices</td>
-                </tr>
-                <tr className="hover:bg-white/[0.01] transition-colors">
-                  <td className="px-6 py-4 font-medium text-white">Client Payment Experience</td>
-                  <td className="px-6 py-4 text-sky-200 font-medium flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>Private, custom-branded payment links with zero ads or vendor watermarks</span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-500">Generic portals with third-party branding and confusing logins</td>
-                </tr>
-                <tr className="hover:bg-white/[0.01] transition-colors">
-                  <td className="px-6 py-4 font-medium text-white">Audit & Record Protection</td>
-                  <td className="px-6 py-4 text-sky-200 font-medium flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>Past invoices stay locked forever — updating your profile never changes past receipts</span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-500">Changing your company profile accidentally alters historical records</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 5: Atmospheric Bottom CTA Banner */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto text-center relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-sky-500/10 via-blue-600/10 to-transparent blur-3xl pointer-events-none rounded-3xl" />
-        <div className="relative bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.08] rounded-3xl p-10 sm:p-14 shadow-2xl backdrop-blur-2xl">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center text-white mx-auto mb-4 shadow-[0_0_25px_rgba(56,189,248,0.5)]">
-            <SparkleStar className="w-5 h-5 text-white" />
-          </div>
-          <h3 className="text-2xl sm:text-3xl font-medium text-white tracking-tight">
-            Ready to Simplify Your Invoicing?
-          </h3>
-          <p className="mt-3 text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
-            Take control of your billing today. Create your first quote, register your business, or explore the dashboard.
-          </p>
-          <div className="mt-8 flex items-center justify-center">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center justify-center gap-2 bg-[#c8e2fb] hover:bg-white text-[#051124] font-semibold px-8 py-3.5 rounded-full text-xs sm:text-sm shadow-[0_0_30px_rgba(200,226,251,0.4)] transition-all transform hover:scale-105"
-            >
-              <span>Open Dashboard</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/[0.06] py-10 px-4 sm:px-6 lg:px-8 text-xs text-slate-500">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">
-              <SparkleStar className="w-3 h-3 text-white" />
-            </div>
-            <span className="font-semibold text-slate-400">SwiftCent Platform</span>
-            <span>• Built for Multi-Entity Invoicing Simplicity</span>
-          </div>
-          <div className="flex items-center space-x-6 text-slate-400">
-            <Link href="/dashboard" className="hover:text-white transition-colors">
-              Dashboard
-            </Link>
-            <Link href="/quotes" className="hover:text-white transition-colors">
-              Quotes
-            </Link>
-            <Link href="/invoices" className="hover:text-white transition-colors">
-              Invoices
-            </Link>
-            <Link href="/business" className="hover:text-white transition-colors">
-              Register Business
-            </Link>
-          </div>
         </div>
       </footer>
     </div>

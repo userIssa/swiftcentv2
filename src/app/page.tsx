@@ -70,13 +70,17 @@ export default function LandingPage() {
       {/* ----------------- TOP NAVIGATION BAR ----------------- */}
       <header className="mx-auto max-w-[1360px] px-6 sm:px-12 pt-6 pb-4 flex items-center justify-between text-sm">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center space-x-2 group">
-          <div className="w-8 h-8 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-black flex items-center justify-center font-bold text-base shadow-sm">
-            S
-          </div>
-          <span className={`font-bold text-lg tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            SwiftCent
-          </span>
+        <Link href="/" className="flex items-center group">
+          <img
+            src="/images/logo-light.png"
+            alt="SwiftCent"
+            className="h-8 sm:h-9 w-auto object-contain transition-transform group-hover:scale-[1.02] dark:hidden"
+          />
+          <img
+            src="/images/logo-dark.png"
+            alt="SwiftCent"
+            className="h-8 sm:h-9 w-auto object-contain transition-transform group-hover:scale-[1.02] hidden dark:block"
+          />
         </Link>
 
         {/* Right Controls */}
@@ -711,14 +715,13 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
             {/* Left Brand Column (col-span-5) */}
             <div className="lg:col-span-5 space-y-3">
-              {/* Brand Logo & Name */}
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center font-bold text-base shadow-sm">
-                  S
-                </div>
-                <span className="font-bold text-xl tracking-tight text-white">
-                  SwiftCent
-                </span>
+              {/* Brand Logo */}
+              <div className="flex items-center">
+                <img
+                  src="/images/logo-dark.png"
+                  alt="SwiftCent"
+                  className="h-8 sm:h-9 w-auto object-contain"
+                />
               </div>
 
               {/* Mission Statement */}

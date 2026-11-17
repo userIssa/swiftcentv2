@@ -216,14 +216,12 @@ function SidebarNav({
             title="Return to Landing Page"
             className="flex items-center gap-2 group"
           >
-            <div
-              className={`w-7 h-7 rounded-xl flex items-center justify-center text-white group-hover:scale-105 transition-transform ${
-                dark
-                  ? 'bg-gradient-to-tr from-sky-400 to-blue-600 shadow-[0_0_18px_rgba(56,189,248,0.45)]'
-                  : 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-sm shadow-blue-600/25'
-              }`}
-            >
-              <Receipt className="w-3.5 h-3.5 text-white" />
+            <div className="w-7 h-7 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform shrink-0 overflow-hidden">
+              <img
+                src={dark ? '/images/logo-mark-dark.png' : '/images/logo-mark-light.png'}
+                alt="SwiftCent"
+                className="w-full h-full object-contain"
+              />
             </div>
             {!collapsed && (
               <div className="flex items-center gap-1.5">
@@ -566,17 +564,12 @@ function AdminShell({ children }: { children: React.ReactNode }) {
             >
               <Menu className="w-5 h-5" />
             </button>
-            <Link href="/" title="Return to Landing Page" className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs">
-                S
-              </div>
-              <span
-                className={`font-bold text-sm ${
-                  isDark ? 'text-white' : 'text-slate-900'
-                }`}
-              >
-                SwiftCent
-              </span>
+            <Link href="/" title="Return to Landing Page" className="flex items-center">
+              <img
+                src={isDark ? '/images/logo-dark.png' : '/images/logo-light.png'}
+                alt="SwiftCent"
+                className="h-6 w-auto object-contain"
+              />
             </Link>
           </div>
           <div className="flex items-center gap-2">

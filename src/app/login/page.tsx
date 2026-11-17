@@ -72,13 +72,12 @@ export default function LoginPage() {
 
       {/* Floating Logo Link */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10 mb-6">
-        <Link href="/" className="inline-flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-[0_0_20px_rgba(56,189,248,0.5)]">
-            <SparkleStar className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-semibold text-lg text-white group-hover:text-sky-300 transition-colors">
-            SwiftCent
-          </span>
+        <Link href="/" className="inline-flex items-center group">
+          <img
+            src="/images/logo-dark.png"
+            alt="SwiftCent"
+            className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
+          />
         </Link>
         <h2 className="mt-4 text-2xl font-medium tracking-tight text-white">
           {mode === 'signin' ? 'Sign in to your account' : 'Create your SwiftCent account'}

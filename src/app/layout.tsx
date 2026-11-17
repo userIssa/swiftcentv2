@@ -8,11 +8,11 @@ export const metadata: Metadata = {
   description: 'Enterprise-grade billing, invoicing, and payment processing platform.',
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon.ico?v=2', sizes: 'any' },
+      { url: '/icon.png?v=2', type: 'image/png', sizes: '32x32' },
     ],
     apple: [
-      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-icon.png?v=2', sizes: '180x180', type: 'image/png' },
     ],
   },
 };
@@ -39,6 +39,9 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning className="scroll-smooth">
       <head>
+        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/icon.png?v=2" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png?v=2" />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-screen antialiased">

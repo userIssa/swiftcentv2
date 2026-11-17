@@ -6,8 +6,8 @@
   body {
     @apply antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    background-color: #030611;
-    color: #e2e8f0;
+    background-color: #000000;
+    color: #ededed;
   }
 
   html[data-theme="light"] body {
@@ -21,8 +21,8 @@
    Printable document sheets (.print-page) stay crisp paper-white in both themes. */
 @layer utilities {
   html[data-theme="dark"] .swiftcent-theme-root {
-    background-color: #030611 !important;
-    color: #e2e8f0;
+    background-color: #000000 !important;
+    color: #ededed;
   }
 
   /* Primary frosted glass cards & white panels */
@@ -44,7 +44,7 @@
   html[data-theme="dark"]
     .swiftcent-theme-root
     :is(.shadow-xl, .shadow-2xl, [role="listbox"], [role="dialog"]):not(.print-page):not(.print-page *) {
-    background: rgba(8, 15, 34, 0.9) !important;
+    background: rgba(12, 12, 12, 0.95) !important;
     backdrop-filter: blur(28px) saturate(145%) !important;
     -webkit-backdrop-filter: blur(28px) saturate(145%) !important;
     border-color: rgba(255, 255, 255, 0.15) !important;

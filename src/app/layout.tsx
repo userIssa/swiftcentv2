@@ -6,6 +6,15 @@ import { ThemeProvider } from '@/context/ThemeContext';
 export const metadata: Metadata = {
   title: 'SwiftCent | Modern Invoicing & Billing',
   description: 'Enterprise-grade billing, invoicing, and payment processing platform.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.png', type: 'image/png', sizes: '32x32' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
 };
 
 const THEME_INIT_SCRIPT = `

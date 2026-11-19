@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Mail,
   Check,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -54,10 +55,38 @@ const STEPS = [
   },
 ];
 
+const FAQS = [
+  {
+    q: 'Can I run my entire business and billing from my mobile phone?',
+    a: 'Yes. SwiftCent is designed mobile-first. You can create smart proposals, issue invoices, track unpaid receivables, and manage client communications directly from your phone browser without installing bulky desktop accounting software.',
+  },
+  {
+    q: 'How does voice-assisted invoicing and navigation work?',
+    a: 'Simply tap the microphone or command bar and speak naturally (e.g. "Swift, new invoice" or "Swift, open proposals"). Our built-in Gemini Live billing engine automatically structures your line items, pricing tiers, and client scopes with bank-grade precision.',
+  },
+  {
+    q: 'What happens when a client approves my proposal or quote?',
+    a: 'SwiftCent connects your business tasks seamlessly: when your client reviews and approves their tokenized proposal link, SwiftCent converts it into a finalized invoice with one click, updates your ledger, and delivers automated payment links.',
+  },
+  {
+    q: 'Can I share proposals and invoices directly over WhatsApp?',
+    a: 'Yes. Every proposal and invoice in SwiftCent includes 1-tap WhatsApp sharing, delivering pre-filled summaries and secure client portal links directly to your clients. Full conversational voice note billing on WhatsApp is also on our active roadmap.',
+  },
+  {
+    q: 'How does SwiftCent eliminate billing errors and protect cash flow?',
+    a: 'We use deterministic integer-cent math instead of standard floating-point approximations. Every document is protected by immutable audit ledgers, bank-grade payment encryption, and automatic reconciliation.',
+  },
+  {
+    q: 'Which currencies and payment methods are supported?',
+    a: 'SwiftCent natively supports major regional and global currencies—including NGN, USD, GBP, and EUR—complete with localized payment terms, bank transfer wire instructions, and card checkout.',
+  },
+];
+
 export default function LandingPage() {
   const { user } = useAuth();
   const { theme, isDark, setTheme } = useTheme();
   const [hoveredStep, setHoveredStep] = useState(1);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -587,6 +616,108 @@ export default function LandingPage() {
               </div>
             );
           })()}
+        </div>
+      </section>
+
+      {/* =========================================================================
+          FREQUENTLY ASKED QUESTIONS (FAQ ACCORDION)
+         ========================================================================= */}
+      <section className="mx-auto max-w-[1360px] px-6 sm:px-12 py-16 sm:py-24">
+        <div className="mx-auto max-w-[960px]">
+          {/* Header */}
+          <div className="text-center space-y-3 mb-10 sm:mb-14">
+            <div
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold ${
+                isDark
+                  ? 'bg-neutral-900 border border-white/10 text-neutral-300'
+                  : 'bg-slate-100 border border-slate-200 text-slate-700'
+              }`}
+            >
+              <span>FREQUENTLY ASKED QUESTIONS</span>
+            </div>
+            <h2
+              className={`text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight ${
+                isDark ? 'text-white' : 'text-slate-900'
+              }`}
+            >
+              Common questions, answered
+            </h2>
+            <p
+              className={`text-sm sm:text-base max-w-xl mx-auto leading-relaxed font-normal ${
+                isDark ? 'text-neutral-400' : 'text-slate-600'
+              }`}
+            >
+              Everything you need to know about mobile-first billing, voice navigation, and connected business tasks with SwiftCent.
+            </p>
+          </div>
+
+          {/* Accordion List */}
+          <div className="space-y-3.5">
+            {FAQS.map((faq, index) => {
+              const isOpen = openFaq === index;
+              return (
+                <div
+                  key={index}
+                  className={`rounded-2xl transition-all border overflow-hidden ${
+                    isOpen
+                      ? isDark
+                        ? 'bg-[#0f0f0f] border-white/20 shadow-lg'
+                        : 'bg-white border-slate-300 shadow-md'
+                      : isDark
+                      ? 'bg-[#080808] border-white/10 hover:border-white/20'
+                      : 'bg-[#fbfcfd] border-slate-200/90 hover:border-slate-300'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(isOpen ? null : index)}
+                    className="w-full text-left p-5 sm:p-6 flex items-center justify-between gap-4 cursor-pointer focus:outline-none"
+                    aria-expanded={isOpen}
+                  >
+                    <span
+                      className={`text-sm sm:text-base font-semibold tracking-tight transition-colors ${
+                        isOpen
+                          ? isDark
+                            ? 'text-white'
+                            : 'text-slate-900'
+                          : isDark
+                          ? 'text-neutral-300 group-hover:text-white'
+                          : 'text-slate-700 group-hover:text-slate-900'
+                      }`}
+                    >
+                      {faq.q}
+                    </span>
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-transform duration-300 ${
+                        isOpen
+                          ? 'rotate-180 bg-blue-600 text-white'
+                          : isDark
+                          ? 'bg-neutral-800 text-neutral-400'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </div>
+                  </button>
+
+                  {/* Answer body */}
+                  <div
+                    className={`transition-all duration-300 ease-out px-5 sm:px-6 overflow-hidden ${
+                      isOpen ? 'max-h-60 pb-5 sm:pb-6 opacity-100' : 'max-h-0 pb-0 opacity-0'
+                    }`}
+                  >
+                    <p
+                      className={`text-xs sm:text-sm leading-relaxed font-normal ${
+                        isDark ? 'text-neutral-400' : 'text-slate-600'
+                      }`}
+                    >
+                      {faq.a}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 

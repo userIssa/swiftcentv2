@@ -45,10 +45,34 @@ export interface ResolvedProductCandidate {
   score?: number;
 }
 
+export interface VoiceBusinessOverview {
+  currency: string;
+  totalInvoiced: string;
+  totalCollected: string;
+  outstandingReceivables: string;
+  overdueCount: number;
+  overdueAmount: string;
+  activeQuotesCount: number;
+  activeQuotesTotal: string;
+  recentInvoices: Array<{
+    invoiceNumber: string;
+    clientName: string;
+    status: string;
+    balanceDue: string;
+  }>;
+  recentQuotes: Array<{
+    quoteNumber: string;
+    clientName: string;
+    status: string;
+    amount: string;
+  }>;
+}
+
 export interface VoiceResolveResponse {
   success: boolean;
   clients: ResolvedClientCandidate[];
   products: ResolvedProductCandidate[];
+  overview?: VoiceBusinessOverview;
   error?: string;
 }
 

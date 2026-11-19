@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { Client } from '@/models/Client';
 import { Product } from '@/models/Product';
+import { Invoice } from '@/models/Invoice';
+import { Quote } from '@/models/Quote';
 import { resolveAuthorizedOrganization } from '@/lib/voice/server-auth';
 import { rankCatalogMatches } from '@/lib/voice/catalog-matcher';
+import { formatCurrency } from '@/engine/calculator';
+import { VoiceBusinessOverview } from '@/lib/voice/types';
 
 export async function POST(request: Request) {
   try {
@@ -10,15 +14,18 @@ export async function POST(request: Request) {
     const organizationId = typeof body.organizationId === 'string' ? body.organizationId : null;
     const clientQuery = typeof body.clientQuery === 'string' ? body.clientQuery : undefined;
     const productQuery = typeof body.productQuery === 'string' ? body.productQuery : undefined;
+    const includeOverview = Boolean(body.includeOverview);
 
     const auth = await resolveAuthorizedOrganization(organizationId);
     if (auth.errorResponse) {
       return auth.errorResponse;
     }
 
-    const orgId = auth.organization._id;
+    const org = auth.organization;
+    const orgId = org._id;
+    const currency = org.currency || 'USD';
 
-    const [allClients, allProducts] = await Promise.all([
+    const [allClients, allProducts, invoices, quotes] = await Promise.all([
       Client.find({ organizationId: orgId })
         .select('_id name email currency paymentTermsDays')
         .sort({ name: 1 })
@@ -27,6 +34,18 @@ export async function POST(request: Request) {
         .select('_id name description unitPriceCents taxRate taxMethod')
         .sort({ name: 1 })
         .lean(),
+      includeOverview
+        ? Invoice.find({ organizationId: orgId })
+            .select('status grandTotalCents paidCents balanceDueCents dueDate invoiceNumber clientSnapshot')
+            .sort({ createdAt: -1 })
+            .lean()
+        : Promise.resolve([]),
+      includeOverview
+        ? Quote.find({ organizationId: orgId })
+            .select('status grandTotalCents quoteNumber clientSnapshot')
+            .sort({ createdAt: -1 })
+            .lean()
+        : Promise.resolve([]),
     ]);
 
     const matchedClients =
@@ -64,10 +83,68 @@ export async function POST(request: Request) {
           }))
         : [];
 
+    let overview: VoiceBusinessOverview | undefined;
+    if (includeOverview) {
+      const now = new Date();
+      let totalInvoicedCents = 0;
+      let totalCollectedCents = 0;
+      let outstandingCents = 0;
+      let overdueCount = 0;
+      let overdueAmountCents = 0;
+
+      for (const inv of invoices as any[]) {
+        if (inv.status === 'void') continue;
+        totalInvoicedCents += inv.grandTotalCents || 0;
+        totalCollectedCents += inv.paidCents || 0;
+        const balance = inv.balanceDueCents || 0;
+        outstandingCents += balance;
+
+        if (balance > 0) {
+          const isOverdue = inv.status === 'overdue' || (inv.dueDate && new Date(inv.dueDate) < now);
+          if (isOverdue) {
+            overdueCount += 1;
+            overdueAmountCents += balance;
+          }
+        }
+      }
+
+      const activeQuotes = (quotes as any[]).filter(
+        (q) => q.status === 'draft' || q.status === 'sent'
+      );
+      const activeQuotesTotalCents = activeQuotes.reduce(
+        (acc, q) => acc + (q.grandTotalCents || 0),
+        0
+      );
+
+      overview = {
+        currency,
+        totalInvoiced: formatCurrency(totalInvoicedCents, currency),
+        totalCollected: formatCurrency(totalCollectedCents, currency),
+        outstandingReceivables: formatCurrency(outstandingCents, currency),
+        overdueCount,
+        overdueAmount: formatCurrency(overdueAmountCents, currency),
+        activeQuotesCount: activeQuotes.length,
+        activeQuotesTotal: formatCurrency(activeQuotesTotalCents, currency),
+        recentInvoices: (invoices as any[]).slice(0, 3).map((i) => ({
+          invoiceNumber: i.invoiceNumber,
+          clientName: i.clientSnapshot?.name || 'Unknown Client',
+          status: i.status,
+          balanceDue: formatCurrency(i.balanceDueCents || 0, currency),
+        })),
+        recentQuotes: (quotes as any[]).slice(0, 3).map((q) => ({
+          quoteNumber: q.quoteNumber,
+          clientName: q.clientSnapshot?.name || 'Unknown Client',
+          status: q.status,
+          amount: formatCurrency(q.grandTotalCents || 0, currency),
+        })),
+      };
+    }
+
     return NextResponse.json({
       success: true,
       clients: matchedClients,
       products: matchedProducts,
+      overview,
     });
   } catch (err: any) {
     console.error('Voice catalog resolve error:', err);

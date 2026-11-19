@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { ActiveBusinessProvider } from '@/context/ActiveBusinessContext';
 import { VoiceDockProvider, useVoiceDock } from '@/context/VoiceDockContext';
+import { VoiceDraftCopilot } from '@/components/VoiceDraftCopilot';
 import { BusinessSwitcher } from '@/components/BusinessSwitcher';
 import { CelestialBackdrop } from '@/components/CelestialBackdrop';
 import { useAuth } from '@/context/AuthContext';
@@ -587,6 +588,9 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1500px] w-full mx-auto">
           {children}
         </main>
+
+        {/* Global SwiftCent Co-Pilot (follows the user everywhere across the site) */}
+        <VoiceDraftCopilot />
       </div>
     </div>
   );

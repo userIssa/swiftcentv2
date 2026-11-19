@@ -112,6 +112,7 @@ export default function ClientQuotePortalPage({
   }
 
   const isApproved = quote.status === 'approved' || quote.status === 'converted';
+  const isOnlinePaymentAllowed = quote.paymentMethodOption !== 'bank_transfer';
 
   return (
     <PortalViewport className="py-10 px-4 sm:px-6 lg:px-8">
@@ -184,12 +185,17 @@ export default function ClientQuotePortalPage({
             <div className="text-xs">
               <span className="font-bold">Quotation Valid Until:</span>{' '}
               {new Date(quote.validUntil).toLocaleDateString()}. Please review the items and click "Accept & Approve" to authorize the work.
+              {!isOnlinePaymentAllowed && (
+                <span className="block mt-0.5 text-blue-800 font-medium">
+                  Accepted settlement upon invoice generation: <strong>Direct Bank Transfer</strong>.
+                </span>
+              )}
             </div>
             <button
               onClick={() => setShowApproveModal(true)}
-              className="text-xs font-bold text-blue-700 hover:underline flex items-center gap-1"
+              className="text-xs font-bold text-blue-700 hover:underline flex items-center gap-1 cursor-pointer shrink-0"
             >
-              <span>Accept Online</span>
+              <span>{isOnlinePaymentAllowed ? 'Accept Online' : 'Accept Proposal'}</span>
             </button>
           </div>
         )}

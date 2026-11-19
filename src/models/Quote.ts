@@ -69,6 +69,15 @@ export interface IQuote extends Document {
       primaryColor?: string;
       customTemplate?: CustomTemplateConfig | null;
     };
+    wireInstructions?: {
+      bankRegion?: string;
+      bankName?: string;
+      accountName?: string;
+      accountNumber?: string;
+      routingNumber?: string;
+      swiftCode?: string;
+      instructions?: string;
+    };
   };
 
   clientSnapshot: {
@@ -91,6 +100,8 @@ export interface IQuote extends Document {
   totalDiscountCents: number;
   totalTaxCents: number;
   grandTotalCents: number;
+
+  paymentMethodOption?: 'both' | 'online' | 'bank_transfer';
 
   notes?: string;
   terms?: string;
@@ -174,6 +185,15 @@ const QuoteSchema = new Schema<IQuote>(
         primaryColor: String,
         customTemplate: { type: Schema.Types.Mixed, default: undefined },
       },
+      wireInstructions: {
+        bankRegion: String,
+        bankName: String,
+        accountName: String,
+        accountNumber: String,
+        routingNumber: String,
+        swiftCode: String,
+        instructions: String,
+      },
     },
 
     clientSnapshot: {
@@ -196,6 +216,12 @@ const QuoteSchema = new Schema<IQuote>(
     totalDiscountCents: { type: Number, required: true, default: 0 },
     totalTaxCents: { type: Number, required: true, default: 0 },
     grandTotalCents: { type: Number, required: true, default: 0 },
+
+    paymentMethodOption: {
+      type: String,
+      enum: ['both', 'online', 'bank_transfer'],
+      default: 'both',
+    },
 
     notes: String,
     terms: String,

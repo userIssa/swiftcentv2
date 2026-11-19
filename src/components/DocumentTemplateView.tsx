@@ -661,10 +661,27 @@ function TotalsAndTerms({ doc, currency, isInvoice, color }: any) {
               <p className="whitespace-pre-line leading-relaxed">{doc.terms}</p>
             </div>
           )}
-          {isInvoice && hasBankDetails && (
+          {/* Payment Method Notice */}
+          <div className="text-[11px] text-slate-500">
+            <span className="font-semibold text-slate-700">Payment Settlement: </span>
+            {doc.paymentMethodOption === 'bank_transfer' ? (
+              <span className="text-amber-800 font-semibold">Direct Bank Transfer Only (Online checkout disabled)</span>
+            ) : doc.paymentMethodOption === 'online' ? (
+              <span className="text-blue-700 font-semibold">Online Card Payment via Client Portal</span>
+            ) : (
+              <span>Online Card Payment or Direct Bank Transfer</span>
+            )}
+          </div>
+
+          {doc.paymentMethodOption !== 'online' && hasBankDetails && (
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2 text-[11px]">
-              <div className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
-                Bank Transfer Settlement Details
+              <div className="font-bold text-slate-700 uppercase tracking-wider text-[10px] flex items-center justify-between">
+                <span>Bank Transfer Settlement Details</span>
+                {doc.paymentMethodOption === 'bank_transfer' && (
+                  <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                    Settlement Method
+                  </span>
+                )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-slate-600">
                 {wire.bankName && (

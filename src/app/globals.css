@@ -266,3 +266,36 @@
     min-height: auto !important;
   }
 }
+
+/* Swift Voice AI Pulse & Spin Utilities */
+@keyframes orb-spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orb-pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.4), 0 0 40px rgba(147, 51, 234, 0.2);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(168, 85, 247, 0.7), 0 0 60px rgba(147, 51, 234, 0.35);
+    transform: scale(1.04);
+  }
+}
+
+.animate-orb-spin-slow {
+  animation: orb-spin-slow 16s linear infinite;
+}
+
+.animate-orb-spin-fast {
+  animation: orb-spin-slow 3s linear infinite;
+}
+
+.animate-orb-pulse {
+  animation: orb-pulse-glow 3.5s ease-in-out infinite;
+}

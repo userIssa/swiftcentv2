@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { Client } from '@/models/Client';
 import { Product } from '@/models/Product';
+import { Invoice } from '@/models/Invoice';
+import { Quote } from '@/models/Quote';
 import { VoiceUsageLog } from '@/models/VoiceUsageLog';
 import { formatCurrency } from '@/engine/calculator';
 import { resolveAuthorizedOrganization } from '@/lib/voice/server-auth';
@@ -17,7 +19,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const organizationId = typeof body.organizationId === 'string' ? body.organizationId : null;
     const documentType: VoiceDocumentType =
-      body.documentType === 'invoice' ? 'invoice' : 'quote';
+      body.documentType === 'quote' ? 'quote' : 'invoice';
 
     const auth = await resolveAuthorizedOrganization(organizationId);
     if (auth.errorResponse) {
@@ -39,22 +41,87 @@ export async function POST(request: Request) {
 
     const org = auth.organization;
     const defaultCurrency = org.currency || 'USD';
+    const userName = auth.session.name || 'there';
 
-    // Pull compact tenant directory snapshot to ground system instructions & minimize ambiguity
-    const [clients, products] = await Promise.all([
+    // Pull compact tenant directory & live reporting metrics to ground system instructions
+    const [clients, products, invoices, quotes] = await Promise.all([
       Client.find({ organizationId: org._id }).select('name email').sort({ name: 1 }).limit(30).lean(),
       Product.find({ organizationId: org._id })
         .select('name unitPriceCents taxRate')
         .sort({ name: 1 })
         .limit(40)
         .lean(),
+      Invoice.find({ organizationId: org._id })
+        .select('status grandTotalCents paidCents balanceDueCents dueDate invoiceNumber clientSnapshot')
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .lean(),
+      Quote.find({ organizationId: org._id })
+        .select('status grandTotalCents quoteNumber clientSnapshot')
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .lean(),
     ]);
+
+    const now = new Date();
+    let totalInvoicedCents = 0;
+    let totalCollectedCents = 0;
+    let outstandingCents = 0;
+    let overdueCount = 0;
+    let overdueAmountCents = 0;
+
+    for (const inv of invoices as any[]) {
+      if (inv.status === 'void') continue;
+      totalInvoicedCents += inv.grandTotalCents || 0;
+      totalCollectedCents += inv.paidCents || 0;
+      const balance = inv.balanceDueCents || 0;
+      outstandingCents += balance;
+
+      if (balance > 0) {
+        const isOverdue = inv.status === 'overdue' || (inv.dueDate && new Date(inv.dueDate) < now);
+        if (isOverdue) {
+          overdueCount += 1;
+          overdueAmountCents += balance;
+        }
+      }
+    }
+
+    const activeQuotes = (quotes as any[]).filter(
+      (q) => q.status === 'draft' || q.status === 'sent'
+    );
+    const activeQuotesTotalCents = activeQuotes.reduce(
+      (acc, q) => acc + (q.grandTotalCents || 0),
+      0
+    );
+
+    const recentInvoicesSummary = (invoices as any[])
+      .slice(0, 3)
+      .map(
+        (i) =>
+          `${i.invoiceNumber} (${i.clientSnapshot?.name || 'Client'}, ${formatCurrency(
+            i.balanceDueCents || 0,
+            defaultCurrency
+          )} due, ${i.status})`
+      )
+      .join('; ');
+
+    const recentQuotesSummary = (quotes as any[])
+      .slice(0, 3)
+      .map(
+        (q) =>
+          `${q.quoteNumber} (${q.clientSnapshot?.name || 'Client'}, ${formatCurrency(
+            q.grandTotalCents || 0,
+            defaultCurrency
+          )}, ${q.status})`
+      )
+      .join('; ');
 
     const todayIso = new Date().toISOString().split('T')[0];
     const systemInstruction = buildVoiceSystemInstruction({
       organizationName: org.name,
       defaultCurrency,
       documentType,
+      userName,
       todayIso,
       sampleClients: clients.map((c) => ({ name: c.name, email: c.email })),
       sampleProducts: products.map((p) => ({
@@ -62,6 +129,17 @@ export async function POST(request: Request) {
         priceDisplay: formatCurrency(p.unitPriceCents, defaultCurrency),
         taxRate: p.taxRate ?? 0,
       })),
+      overview: {
+        totalInvoiced: formatCurrency(totalInvoicedCents, defaultCurrency),
+        totalCollected: formatCurrency(totalCollectedCents, defaultCurrency),
+        outstandingReceivables: formatCurrency(outstandingCents, defaultCurrency),
+        overdueCount,
+        overdueAmount: formatCurrency(overdueAmountCents, defaultCurrency),
+        activeQuotesCount: activeQuotes.length,
+        activeQuotesTotal: formatCurrency(activeQuotesTotalCents, defaultCurrency),
+        recentInvoicesSummary: recentInvoicesSummary || undefined,
+        recentQuotesSummary: recentQuotesSummary || undefined,
+      },
     });
 
     const serverAi = new GoogleGenAI({
@@ -132,6 +210,7 @@ export async function POST(request: Request) {
       expireTime,
       organizationId: org._id.toString(),
       organizationName: org.name,
+      userName,
       currency: defaultCurrency,
     });
   } catch (err: any) {

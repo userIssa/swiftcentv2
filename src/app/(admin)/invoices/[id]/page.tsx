@@ -21,6 +21,8 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { SendDocumentModal } from '@/components/SendDocumentModal';
 import { DocumentTemplateView } from '@/components/DocumentTemplateView';
 import { CurrencySelect } from '@/components/CurrencySelect';
+import { DocumentLifecycleStepper } from '@/components/DocumentLifecycleStepper';
+import { WhatsAppShareButton } from '@/components/WhatsAppShareButton';
 import { SearchableCombobox } from '@/components/SearchableCombobox';
 import { formatCurrency } from '@/engine/calculator';
 import { getCurrencySymbol } from '@/lib/currencies';
@@ -104,6 +106,28 @@ export default function InvoiceDetailPage({
         await loadInvoice();
       } else {
         alert(data.error || 'Failed to update invoice currency');
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handlePaymentMethodOptionChange = async (nextOption: 'both' | 'online' | 'bank_transfer') => {
+    if (!invoice || nextOption === (invoice.paymentMethodOption || 'both')) return;
+    try {
+      setActionLoading(true);
+      const res = await fetch(`/api/invoices/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentMethodOption: nextOption, actor: 'admin' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        await loadInvoice();
+      } else {
+        alert(data.error || 'Failed to update payment method');
       }
     } catch (err: any) {
       alert(err.message);
@@ -240,6 +264,21 @@ export default function InvoiceDetailPage({
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-slate-900">{invoice.invoiceNumber}</h1>
               <StatusBadge status={invoice.status as InvoiceStatus} size="sm" />
+              <span
+                className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                  invoice.paymentMethodOption === 'bank_transfer'
+                    ? 'bg-amber-50 text-amber-800 border-amber-200'
+                    : invoice.paymentMethodOption === 'online'
+                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    : 'bg-slate-100 text-slate-700 border-slate-200'
+                }`}
+              >
+                {invoice.paymentMethodOption === 'bank_transfer'
+                  ? '🏦 Bank Transfer Only'
+                  : invoice.paymentMethodOption === 'online'
+                  ? '💳 Online Card Only'
+                  : '🔄 Online & Bank Transfer'}
+              </span>
             </div>
             <p className="text-xs text-slate-500">
               Created on {new Date(invoice.createdAt).toLocaleDateString()}
@@ -250,15 +289,28 @@ export default function InvoiceDetailPage({
 
         <div className="flex flex-wrap items-center gap-2">
           {!isLocked && (
-            <div className="w-40">
-              <CurrencySelect
-                compact
-                value={invoice.currency || 'USD'}
+            <>
+              <div className="w-40">
+                <CurrencySelect
+                  compact
+                  value={invoice.currency || 'USD'}
+                  disabled={actionLoading}
+                  onChange={handleCurrencyChange}
+                  ariaLabel="Draft Invoice Currency"
+                />
+              </div>
+              <select
+                value={invoice.paymentMethodOption || 'both'}
                 disabled={actionLoading}
-                onChange={handleCurrencyChange}
-                ariaLabel="Draft Invoice Currency"
-              />
-            </div>
+                onChange={(e) => handlePaymentMethodOptionChange(e.target.value as any)}
+                className="text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-xs"
+                title="Change Accepted Payment Method for Draft"
+              >
+                <option value="both">Both (Online & Wire)</option>
+                <option value="online">Online Card Only</option>
+                <option value="bank_transfer">Bank Transfer Only</option>
+              </select>
+            </>
           )}
 
           {/* Public Portal Link */}
@@ -279,6 +331,19 @@ export default function InvoiceDetailPage({
             <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
             <span>Client View</span>
           </Link>
+
+          {/* WhatsApp 1-Tap Share */}
+          {invoice.publicAccessToken && (
+            <WhatsAppShareButton
+              documentType="invoice"
+              documentNumber={invoice.invoiceNumber}
+              clientName={invoice.clientSnapshot?.name || invoice.clientId?.name}
+              clientPhone={invoice.clientSnapshot?.phone || invoice.clientId?.phone}
+              businessName={invoice.organizationSnapshot?.name}
+              formattedTotal={formatCurrency(invoice.grandTotalCents, invoice.currency || 'USD')}
+              portalUrl={portalUrl}
+            />
+          )}
 
           {/* Print / PDF */}
           <button
@@ -335,6 +400,16 @@ export default function InvoiceDetailPage({
             <span>Delete</span>
           </button>
         </div>
+      </div>
+
+      {/* Connected Payment Lifecycle Stepper */}
+      <div className="no-print">
+        <DocumentLifecycleStepper
+          type="invoice"
+          status={invoice.status}
+          sourceQuoteId={invoice.quoteId?._id || invoice.quoteId}
+          sourceQuoteNumber={invoice.quoteId?.quoteNumber}
+        />
       </div>
 
       {/* Invoice Document with Live Template & Accent Switcher */}

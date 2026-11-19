@@ -127,6 +127,8 @@ export function isStarterPlaceholderItem(
   documentType: VoiceDocumentType
 ): boolean {
   const desc = item.description.trim().toLowerCase();
+  if (!desc) return true;
+
   if (documentType === 'invoice') {
     return (
       STARTER_INVOICE_DESCRIPTIONS.has(desc) &&
@@ -157,7 +159,8 @@ export function draftItemsToRawLineItems(items: VoiceFormLineItem[]): RawLineIte
       });
     }
 
-    const qtyNum = parseFloat(it.quantity) || 0;
+    // Default to quantity 1 (matching placeholder="1") if user enters unit price without touching qty
+    const qtyNum = it.quantity === '' ? 1 : (parseFloat(it.quantity) || 0);
     const unitPriceNum = parseFloat(it.unitPrice) || 0;
     const discountNum = parseFloat(it.discountValue) || 0;
 

@@ -25,6 +25,7 @@ export interface CreateInvoiceInput {
   items: RawLineItem[];
   notes?: string;
   terms?: string;
+  paymentMethodOption?: 'both' | 'online' | 'bank_transfer';
   actor?: string;
 }
 
@@ -140,6 +141,7 @@ export class InvoiceService {
       grandTotalCents: calc.summary.grandTotalCents,
       paidCents: 0,
       balanceDueCents: calc.summary.balanceDueCents,
+      paymentMethodOption: input.paymentMethodOption || 'both',
       notes: input.notes,
       terms: input.terms,
       activityLog: [auditEvent],
@@ -160,6 +162,7 @@ export class InvoiceService {
       dueDate?: Date | string;
       notes?: string;
       terms?: string;
+      paymentMethodOption?: 'both' | 'online' | 'bank_transfer';
     },
     actor: string = 'system'
   ): Promise<IInvoice> {
@@ -182,6 +185,7 @@ export class InvoiceService {
     }
     if (updates.notes !== undefined) invoice.notes = updates.notes;
     if (updates.terms !== undefined) invoice.terms = updates.terms;
+    if (updates.paymentMethodOption !== undefined) invoice.paymentMethodOption = updates.paymentMethodOption;
 
     if (updates.items && updates.items.length > 0) {
       const calc = calculateInvoice(updates.items, invoice.paidCents);

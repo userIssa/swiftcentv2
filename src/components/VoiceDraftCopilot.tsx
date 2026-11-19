@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Mic,
   MicOff,
@@ -22,31 +23,86 @@ import { VoiceDocumentDraft, VoiceDraftActions } from '@/lib/voice/types';
 import { computeVoiceDockGeometry, VoicePanelMode } from '@/lib/voice/dock-layout';
 import { TypewriterText } from '@/components/TypewriterText';
 import { useVoiceDock } from '@/context/VoiceDockContext';
+import { useActiveBusiness } from '@/context/ActiveBusinessContext';
+import { useAuth } from '@/context/AuthContext';
+import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 
 interface VoiceDraftCopilotProps {
-  draft: VoiceDocumentDraft;
-  clients: Array<{ _id: string; name: string; email?: string }>;
-  actions: VoiceDraftActions;
+  draft?: VoiceDocumentDraft;
+  clients?: Array<{ _id: string; name: string; email?: string }>;
+  actions?: VoiceDraftActions;
   defaultExpanded?: boolean;
 }
 
 const WAVEFORM_WEIGHTS = [0.45, 0.78, 1.0, 0.72, 0.48];
 
 export function VoiceDraftCopilot({
-  draft,
-  clients,
-  actions,
+  draft: propDraft,
+  clients: propClients,
+  actions: propActions,
   defaultExpanded = false,
-}: VoiceDraftCopilotProps) {
-  const { setDockOffsetPx } = useVoiceDock();
+}: VoiceDraftCopilotProps = {}) {
+  const router = useRouter();
+  const { activeBusiness } = useActiveBusiness();
+  const { user } = useAuth();
+  const {
+    dockOffsetPx,
+    setDockOffsetPx,
+    panelMode,
+    setPanelMode,
+    activeBridge,
+    startSessionTrigger,
+  } = useVoiceDock();
 
-  const [panelMode, setPanelMode] = useState<VoicePanelMode>(
-    defaultExpanded ? 'compact' : 'collapsed'
-  );
   const [activeTab, setActiveTab] = useState<'orb' | 'chat'>('orb');
   const [viewportWidth, setViewportWidth] = useState<number>(1280);
   const [textInput, setTextInput] = useState('');
   const feedEndRef = useRef<HTMLDivElement>(null);
+
+  const fallbackDraft = useMemo<VoiceDocumentDraft>(() => ({
+    documentType: 'invoice',
+    organizationId: activeBusiness?._id || '',
+    selectedClientId: '',
+    currency: activeBusiness?.currency || 'USD',
+    issueDate: new Date().toISOString().split('T')[0],
+    dueOrValidDate: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+    notes: '',
+    terms: '',
+    items: [],
+  }), [activeBusiness?._id, activeBusiness?.currency]);
+
+  const fallbackActions = useMemo<VoiceDraftActions>(() => ({
+    setClientById: () => {},
+    setCurrency: () => {},
+    setIssueDate: () => {},
+    setDueOrValidDate: () => {},
+    setNotes: () => {},
+    setTerms: () => {},
+    setItems: () => {},
+  }), []);
+
+  const effectiveDraft = propDraft || activeBridge?.draft || fallbackDraft;
+  const effectiveClients = propClients || activeBridge?.clients || [];
+  const effectiveActions = propActions || activeBridge?.actions || fallbackActions;
+
+  const handleNavigate = useCallback(async (path: string) => {
+    router.push(path);
+  }, [router]);
+
+  const handleGetBusinessOverview = useCallback(async () => {
+    if (!activeBusiness?._id) return null;
+    const res = await fetchJsonWithBuffer<any>('/api/voice/resolve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        organizationId: activeBusiness._id,
+        includeOverview: true,
+      }),
+      timeoutMs: 12000,
+      retry: true,
+    });
+    return res.success ? res.overview : null;
+  }, [activeBusiness?._id]);
 
   const {
     connectionState,
@@ -60,7 +116,25 @@ export function VoiceDraftCopilot({
     stopSession,
     toggleMute,
     sendTextMessage,
-  } = useVoiceDraftSession({ draft, clients, actions });
+  } = useVoiceDraftSession({
+    draft: effectiveDraft,
+    clients: effectiveClients,
+    actions: effectiveActions,
+    userName: user?.name,
+    onNavigate: handleNavigate,
+    onGetBusinessOverview: handleGetBusinessOverview,
+  });
+
+  // Watch startSessionTrigger from dashboard or actions
+  const prevTriggerRef = useRef(startSessionTrigger);
+  useEffect(() => {
+    if (startSessionTrigger > prevTriggerRef.current) {
+      prevTriggerRef.current = startSessionTrigger;
+      if (connectionState === 'idle' || connectionState === 'error') {
+        void startSession();
+      }
+    }
+  }, [startSessionTrigger, connectionState, startSession]);
 
   // Track viewport width to clamp sidebar width responsively so receipts/forms remain spacious
   useEffect(() => {
@@ -73,9 +147,9 @@ export function VoiceDraftCopilot({
 
   useEffect(() => {
     if (defaultExpanded) {
-      setPanelMode((prev) => (prev === 'collapsed' ? 'compact' : prev));
+      setPanelMode('compact');
     }
-  }, [defaultExpanded]);
+  }, [defaultExpanded, setPanelMode]);
 
   const geometry = useMemo(
     () => computeVoiceDockGeometry(viewportWidth, panelMode),
@@ -99,7 +173,11 @@ export function VoiceDraftCopilot({
     connectionState === 'paused' ||
     connectionState === 'reconnecting';
 
-  const docLabel = draft.documentType === 'invoice' ? 'Invoice' : 'Quote';
+  const docLabel = activeBridge
+    ? activeBridge.documentType === 'invoice'
+      ? 'Invoice'
+      : 'Quote'
+    : 'Co-Pilot';
 
   const recentActions = useMemo(
     () => transcripts.filter((t) => t.speaker === 'action').slice(-2),
@@ -136,7 +214,7 @@ export function VoiceDraftCopilot({
               ? 'Mic paused'
               : connectionState === 'error'
                 ? 'Connection issue'
-                : 'Ready to draft';
+                : 'SwiftCent Copilot';
 
   const handleCenterMicAction = async () => {
     if (connectionState === 'initializing') return;
@@ -213,20 +291,24 @@ export function VoiceDraftCopilot({
           />
 
           {/* Circular Iridescent Swirled Orb Asset */}
-          <span className="relative block w-full h-full rounded-full overflow-hidden ring-2 ring-white/90 shadow-[0_12px_30px_rgba(99,102,241,0.38)] bg-indigo-100">
+          <span className="relative block w-full h-full rounded-full overflow-hidden ring-2 ring-white/90 shadow-[0_12px_30px_rgba(139,92,246,0.45)] bg-indigo-950">
             <img
-              src="/images/voice-orb.jpg"
-              alt="SwiftCent Voice Copilot"
-              className="w-full h-full object-cover scale-[1.16] rounded-full select-none"
+              src="/images/swift-orb.jpg"
+              alt="SwiftCent Copilot"
+              className={`w-full h-full object-cover scale-[1.18] rounded-full select-none ${
+                isLive && !isMuted
+                  ? 'animate-[orb-spin-fast_8s_linear_infinite]'
+                  : 'animate-[orb-spin-slow_24s_linear_infinite]'
+              }`}
             />
-            <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/15 to-white/30 pointer-events-none" />
+            <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
           </span>
 
           {/* Tiny Hover Prompt Label */}
           {!isLive && (
             <span className="hidden sm:flex items-center gap-1 absolute right-full mr-3 top-1/2 -translate-y-1/2 whitespace-nowrap bg-slate-900/90 text-white text-[11px] font-medium px-2.5 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-md">
               <Sparkles className="w-3 h-3 text-sky-300" />
-              <span>Voice Draft</span>
+              <span>SwiftCent Copilot</span>
             </span>
           )}
         </button>
@@ -276,10 +358,10 @@ export function VoiceDraftCopilot({
 
           <div className="text-center min-w-0">
             <div className="text-xs font-bold tracking-tight text-slate-800 truncate">
-              Voice {docLabel} Copilot
+              {activeBridge ? `Voice ${docLabel} Copilot` : 'SwiftCent Co-Pilot'}
             </div>
             <div className="text-[10px] font-medium text-slate-600/80 truncate">
-              {draft.currency} Live Draft
+              {effectiveDraft.currency} · AI Colleague
             </div>
           </div>
 
@@ -367,9 +449,13 @@ export function VoiceDraftCopilot({
                 }`}
               >
                 <img
-                  src="/images/voice-orb.jpg"
-                  alt="Interactive Voice Orb"
-                  className="w-full h-full object-cover scale-[1.15] rounded-full select-none"
+                  src="/images/swift-orb.jpg"
+                  alt="Interactive Copilot Orb"
+                  className={`w-full h-full object-cover scale-[1.18] rounded-full select-none ${
+                    isLive && !isMuted
+                      ? 'animate-[orb-spin-fast_8s_linear_infinite]'
+                      : 'animate-[orb-spin-slow_24s_linear_infinite]'
+                  }`}
                 />
                 <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
               </button>
@@ -384,8 +470,10 @@ export function VoiceDraftCopilot({
                     streamKey={latestDialogue.id}
                     isFinal={latestDialogue.isFinal}
                   />
-                ) : (
+                ) : activeBridge ? (
                   `Speak naturally to build your ${docLabel.toLowerCase()} — client, items, discounts, and terms.`
+                ) : (
+                  'Ask me anything: "let\'s see the reporting", "open proposals", "show unpaid invoices", or "track payments".'
                 )}
               </p>
 

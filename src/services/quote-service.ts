@@ -19,6 +19,7 @@ export interface CreateQuoteInput {
   items: RawLineItem[];
   notes?: string;
   terms?: string;
+  paymentMethodOption?: 'both' | 'online' | 'bank_transfer';
   actor?: string;
 }
 
@@ -73,6 +74,7 @@ export class QuoteService {
       taxId: org.taxId,
       address: org.address,
       branding: org.branding,
+      wireInstructions: org.wireInstructions,
     };
 
     const clientSnapshot = {
@@ -118,6 +120,7 @@ export class QuoteService {
       totalDiscountCents: calc.summary.totalDiscountCents,
       totalTaxCents: calc.summary.totalTaxCents,
       grandTotalCents: calc.summary.grandTotalCents,
+      paymentMethodOption: input.paymentMethodOption || 'both',
       notes: input.notes,
       terms: input.terms,
       activityLog: [
@@ -143,6 +146,7 @@ export class QuoteService {
       validUntil?: Date | string;
       notes?: string;
       terms?: string;
+      paymentMethodOption?: 'both' | 'online' | 'bank_transfer';
     },
     actor: string = 'system'
   ): Promise<IQuote> {
@@ -164,6 +168,7 @@ export class QuoteService {
     }
     if (updates.notes !== undefined) quote.notes = updates.notes;
     if (updates.terms !== undefined) quote.terms = updates.terms;
+    if (updates.paymentMethodOption !== undefined) quote.paymentMethodOption = updates.paymentMethodOption;
 
     quote.activityLog.push({
       action: 'Quote updated',
@@ -325,6 +330,7 @@ export class QuoteService {
       grandTotalCents: quote.grandTotalCents,
       paidCents: 0,
       balanceDueCents: quote.grandTotalCents,
+      paymentMethodOption: quote.paymentMethodOption || 'both',
       notes: quote.notes ? `Converted from Quote ${quote.quoteNumber}\n\n${quote.notes}` : `Converted from Quote ${quote.quoteNumber}`,
       terms: quote.terms,
       activityLog: [

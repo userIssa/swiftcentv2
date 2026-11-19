@@ -11,6 +11,7 @@ import {
   Send,
   Calculator,
   Building,
+  CreditCard,
   Image as ImageIcon,
 } from 'lucide-react';
 import { calculateInvoice, formatCurrency } from '@/engine/calculator';
@@ -30,6 +31,7 @@ import { fetchJsonWithBuffer } from '@/lib/api-fetch';
 import { draftItemsToRawLineItems } from '@/lib/voice/catalog-matcher';
 import { useDocumentVoiceBridge } from '@/lib/voice/useDocumentVoiceBridge';
 import { VoiceFormLineItem } from '@/lib/voice/types';
+import { useVoiceDock } from '@/context/VoiceDockContext';
 
 type FormLineItem = VoiceFormLineItem;
 
@@ -52,17 +54,18 @@ export default function NewQuotePage() {
   );
   const [notes, setNotes] = useState('This quotation is valid for 30 days from the date of issue.');
   const [terms, setTerms] = useState('Scope of work commences upon quote acceptance. Final invoice payable Net 14.');
+  const [paymentMethodOption, setPaymentMethodOption] = useState<'both' | 'online' | 'bank_transfer'>('both');
 
   const [items, setItems] = useState<FormLineItem[]>([
     {
       id: '1',
-      description: 'Discovery, Strategic Architecture & Prototype Development',
-      quantity: '1',
-      unitPrice: '2500',
+      description: '',
+      quantity: '',
+      unitPrice: '',
       discountType: 'percentage',
-      discountValue: '0',
+      discountValue: '',
       taxName: 'Tax',
-      taxRate: '0',
+      taxRate: '',
       taxMethod: 'exclusive',
     },
   ]);
@@ -156,18 +159,32 @@ export default function NewQuotePage() {
     setItems,
   });
 
+  const { registerDraftBridge, setPanelMode } = useVoiceDock();
+  useEffect(() => {
+    registerDraftBridge({
+      documentType: 'quote',
+      draft: voiceDraft,
+      clients,
+      actions: voiceActions,
+    });
+    if (voiceDefaultExpanded) {
+      setPanelMode('compact');
+    }
+    return () => registerDraftBridge(null);
+  }, [voiceDraft, clients, voiceActions, voiceDefaultExpanded, registerDraftBridge, setPanelMode]);
+
   const addItem = () => {
     setItems((prev) => [
       ...prev,
       {
         id: Math.random().toString(),
         description: '',
-        quantity: '1',
-        unitPrice: '0',
+        quantity: '',
+        unitPrice: '',
         discountType: 'percentage',
-        discountValue: '0',
+        discountValue: '',
         taxName: 'Tax',
-        taxRate: '0',
+        taxRate: '',
         taxMethod: 'exclusive',
       },
     ]);
@@ -206,6 +223,7 @@ export default function NewQuotePage() {
         items: rawLineItems,
         notes,
         terms,
+        paymentMethodOption,
       };
 
       const data = await fetchJsonWithBuffer('/api/quotes', {
@@ -280,13 +298,6 @@ export default function NewQuotePage() {
         </div>
       </div>
 
-      {/* Production Voice-to-Quote Copilot */}
-      <VoiceDraftCopilot
-        draft={voiceDraft}
-        clients={clients}
-        actions={voiceActions}
-        defaultExpanded={voiceDefaultExpanded}
-      />
 
       <div className="grid grid-cols-1 @4xl:grid-cols-3 gap-6">
         {/* Left Form: Business, Client, Dates, Line Items */}
@@ -511,7 +522,7 @@ export default function NewQuotePage() {
                         </div>
                         <input
                           type="text"
-                          placeholder="e.g. Discovery, UI/UX Design, Development Milestone..."
+                          placeholder="e.g. Discovery, Strategic Architecture & Prototype Development"
                           value={it.description}
                           onChange={(e) => updateItem(it.id, 'description', e.target.value)}
                           className="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -601,6 +612,105 @@ export default function NewQuotePage() {
               <Plus className="w-4 h-4 text-slate-400" />
               <span>Add Another Line Item</span>
             </button>
+          </div>
+
+          {/* Payment Method Selection Card */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-indigo-600" />
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
+                  Accepted Payment Method Upon Invoicing
+                </h2>
+              </div>
+              <span className="text-[11px] text-slate-400">Specifies terms for quote approval & invoices</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Option 1: Both */}
+              <button
+                type="button"
+                onClick={() => setPaymentMethodOption('both')}
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  paymentMethodOption === 'both'
+                    ? 'border-indigo-600 bg-indigo-50/60 ring-2 ring-indigo-500/20'
+                    : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-slate-900">Online & Bank Transfer</span>
+                  <span
+                    className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                      paymentMethodOption === 'both' ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'
+                    }`}
+                  >
+                    {paymentMethodOption === 'both' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Client can settle via online card or wire transfer to your company account.
+                </p>
+              </button>
+
+              {/* Option 2: Online Only */}
+              <button
+                type="button"
+                onClick={() => setPaymentMethodOption('online')}
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  paymentMethodOption === 'online'
+                    ? 'border-indigo-600 bg-indigo-50/60 ring-2 ring-indigo-500/20'
+                    : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-slate-900">Online Card Only</span>
+                  <span
+                    className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                      paymentMethodOption === 'online' ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'
+                    }`}
+                  >
+                    {paymentMethodOption === 'online' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Direct online portal checkout with card payment upon conversion.
+                </p>
+              </button>
+
+              {/* Option 3: Bank Transfer Only */}
+              <button
+                type="button"
+                onClick={() => setPaymentMethodOption('bank_transfer')}
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  paymentMethodOption === 'bank_transfer'
+                    ? 'border-indigo-600 bg-indigo-50/60 ring-2 ring-indigo-500/20'
+                    : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-slate-900">Bank Transfer Only</span>
+                  <span
+                    className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                      paymentMethodOption === 'bank_transfer' ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'
+                    }`}
+                  >
+                    {paymentMethodOption === 'bank_transfer' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Online card button will be hidden. Client receives wire instructions.
+                </p>
+              </button>
+            </div>
+
+            {paymentMethodOption === 'bank_transfer' && (
+              <div className="p-3 rounded-lg bg-amber-50/80 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+                <Building className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold">Bank transfer mode active:</span> When this proposal is approved and converted into an invoice, the public client link will show your company's wire details and hide the card checkout button.
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Notes & Terms */}

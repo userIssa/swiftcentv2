@@ -20,6 +20,16 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Invoice is already paid in full' }, { status: 400 });
     }
 
+    if (invoice.paymentMethodOption === 'bank_transfer') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Online payment is not enabled for this invoice. Please pay via direct bank transfer to the company account.',
+        },
+        { status: 400 }
+      );
+    }
+
     // If Stripe is not configured with live/test secret key, inform frontend to use embedded modal
     if (!stripe) {
       return NextResponse.json({

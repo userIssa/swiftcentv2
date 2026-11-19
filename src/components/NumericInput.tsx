@@ -62,8 +62,9 @@ export function NumericInput({
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    if (e.target.value === '') {
-      onChange('0');
+    // Clean up trailing decimal point if left dangling, but preserve empty string so placeholder displays
+    if (e.target.value.endsWith('.')) {
+      onChange(e.target.value.slice(0, -1));
     }
   };
 

@@ -27,6 +27,9 @@ export interface UseVoiceDraftSessionOptions {
   draft: VoiceDocumentDraft;
   clients: Array<{ _id: string; name: string; email?: string }>;
   actions: VoiceDraftActions;
+  userName?: string;
+  onNavigate?: (path: string) => Promise<void> | void;
+  onGetBusinessOverview?: () => Promise<any>;
 }
 
 export interface UseVoiceDraftSessionReturn {
@@ -56,6 +59,9 @@ export function useVoiceDraftSession({
   draft,
   clients,
   actions,
+  userName,
+  onNavigate,
+  onGetBusinessOverview,
 }: UseVoiceDraftSessionOptions): UseVoiceDraftSessionReturn {
   const [connectionState, setConnectionState] = useState<VoiceConnectionState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -69,6 +75,9 @@ export function useVoiceDraftSession({
   const draftRef = useRef<VoiceDocumentDraft>(draft);
   const clientsRef = useRef(clients);
   const actionsRef = useRef(actions);
+  const userNameRef = useRef(userName);
+  const onNavigateRef = useRef(onNavigate);
+  const onGetBusinessOverviewRef = useRef(onGetBusinessOverview);
 
   useEffect(() => {
     draftRef.current = draft;
@@ -81,6 +90,18 @@ export function useVoiceDraftSession({
   useEffect(() => {
     actionsRef.current = actions;
   }, [actions]);
+
+  useEffect(() => {
+    userNameRef.current = userName;
+  }, [userName]);
+
+  useEffect(() => {
+    onNavigateRef.current = onNavigate;
+  }, [onNavigate]);
+
+  useEffect(() => {
+    onGetBusinessOverviewRef.current = onGetBusinessOverview;
+  }, [onGetBusinessOverview]);
 
   const sessionRef = useRef<Session | null>(null);
   const audioRef = useRef<VoiceAudioEngine | null>(null);
@@ -413,6 +434,8 @@ export function useVoiceDraftSession({
               actions: actionsRef.current,
               onActionLog: (actionText) => appendSystemOrAction('action', actionText),
               onRequestEndSession: requestAutoEndSession,
+              onNavigate: onNavigateRef.current,
+              onGetBusinessOverview: onGetBusinessOverviewRef.current,
             });
             functionResponses.push(response);
           }
@@ -605,8 +628,18 @@ export function useVoiceDraftSession({
       setConnectionState('connected');
       appendSystemOrAction(
         'system',
-        `Voice Copilot connected for ${draftRef.current.documentType}. Speak naturally to build your draft.`
+        'SwiftCent Copilot connected. Speak or ask anything.'
       );
+
+      // Immediately trigger spoken greeting from Copilot so the conversational colleague experience starts instantly
+      const firstName = (userNameRef.current || 'there').split(' ')[0];
+      try {
+        sessionRef.current?.sendRealtimeInput({
+          text: `[System Event: User ${firstName} tapped the Co-Pilot button. Greet them warmly by first name and ask: "What can I do for you today?"]`,
+        });
+      } catch (err) {
+        console.warn('Failed to send greeting trigger:', err);
+      }
     } catch (err: any) {
       flushVoiceUsage('ended', 'init_error');
       await teardownHardwareAndSocket();

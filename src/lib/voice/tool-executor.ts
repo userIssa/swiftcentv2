@@ -23,6 +23,76 @@ export interface ToolExecutionContext {
   actions: VoiceDraftActions;
   onActionLog: (text: string) => void;
   onRequestEndSession?: (reason: string) => void;
+  onNavigate?: (path: string) => Promise<void> | void;
+  onGetBusinessOverview?: () => Promise<any>;
+}
+
+const DESTINATION_ROUTES: Record<string, string> = {
+  dashboard: '/dashboard',
+  reports: '/reports',
+  invoices: '/invoices',
+  new_invoice: '/invoices/new',
+  quotes: '/quotes',
+  new_quote: '/quotes/new',
+  clients: '/clients',
+  products: '/products',
+  settings: '/settings',
+  business: '/business',
+};
+
+async function handleNavigateToPage(
+  args: Record<string, any>,
+  ctx: ToolExecutionContext
+): Promise<{ output: Record<string, unknown>; scheduling: FunctionResponseScheduling }> {
+  const rawDest = typeof args.destination === 'string' ? args.destination.toLowerCase().trim() : 'dashboard';
+  const targetPath = DESTINATION_ROUTES[rawDest] || '/dashboard';
+  const readableName = rawDest.replace('_', ' ');
+
+  ctx.onActionLog(`Navigating to ${readableName}...`);
+  if (ctx.onNavigate) {
+    await ctx.onNavigate(targetPath);
+  }
+
+  let overview = null;
+  if (ctx.onGetBusinessOverview) {
+    try {
+      overview = await ctx.onGetBusinessOverview();
+    } catch {
+      // ignore
+    }
+  }
+
+  return {
+    output: {
+      success: true,
+      destination: rawDest,
+      path: targetPath,
+      message: `Navigated to ${readableName}.`,
+      businessOverview: overview,
+    },
+    scheduling: FunctionResponseScheduling.WHEN_IDLE,
+  };
+}
+
+async function handleGetBusinessOverview(
+  _args: Record<string, any>,
+  ctx: ToolExecutionContext
+): Promise<{ output: Record<string, unknown>; scheduling: FunctionResponseScheduling }> {
+  let overview = null;
+  if (ctx.onGetBusinessOverview) {
+    try {
+      overview = await ctx.onGetBusinessOverview();
+    } catch {
+      // ignore
+    }
+  }
+  return {
+    output: {
+      success: true,
+      businessOverview: overview || 'No overview data available.',
+    },
+    scheduling: FunctionResponseScheduling.WHEN_IDLE,
+  };
 }
 
 async function resolveFromWorkspace(
@@ -643,6 +713,12 @@ export async function executeVoiceToolCall(
           },
           scheduling: FunctionResponseScheduling.WHEN_IDLE,
         };
+        break;
+      case 'navigate_to_page':
+        result = await handleNavigateToPage(args, ctx);
+        break;
+      case 'get_business_overview':
+        result = await handleGetBusinessOverview(args, ctx);
         break;
       case 'end_voice_session': {
         const reason =

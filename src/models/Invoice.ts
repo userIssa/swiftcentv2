@@ -97,6 +97,8 @@ export interface IInvoice extends Document {
   paidCents: number;
   balanceDueCents: number;
 
+  paymentMethodOption?: 'both' | 'online' | 'bank_transfer';
+
   notes?: string;
   terms?: string;
   activityLog: IInvoiceAuditLog[];
@@ -210,6 +212,12 @@ const InvoiceSchema = new Schema<IInvoice>(
     grandTotalCents: { type: Number, required: true, default: 0 },
     paidCents: { type: Number, required: true, default: 0 },
     balanceDueCents: { type: Number, required: true, default: 0 },
+
+    paymentMethodOption: {
+      type: String,
+      enum: ['both', 'online', 'bank_transfer'],
+      default: 'both',
+    },
 
     notes: String,
     terms: String,

@@ -26,6 +26,7 @@ import { useAuth } from '@/context/AuthContext';
 import { clearSampleWorkspaceData, loadSampleWorkspaceData } from '@/lib/sample-data-client';
 import { getCurrencySymbol } from '@/lib/currencies';
 import { fetchJsonWithBuffer } from '@/lib/api-fetch';
+import { DashboardActionHub } from '@/components/DashboardActionHub';
 
 interface DashboardStats {
   totalInvoicedCents: number;
@@ -154,6 +155,15 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Mobile-First "What can I help you do?" Tri-Modal Hub */}
+      <DashboardActionHub
+        userName={user?.name}
+        businessName={activeBusiness?.name}
+        currency={activeBusiness?.currency || 'USD'}
+        overdueCount={stats.overdueCount}
+        outstandingCents={stats.outstandingCents}
+      />
+
       {/* Top Welcome & Actions Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

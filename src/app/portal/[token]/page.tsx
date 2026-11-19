@@ -11,6 +11,7 @@ import {
   Building,
   Check,
   FileText,
+  Copy,
 } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
 import { DocumentTemplateView } from '@/components/DocumentTemplateView';
@@ -30,7 +31,17 @@ export default function ClientPortalPage({
   const [error, setError] = useState('');
   const [paying, setPaying] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [showBankModal, setShowBankModal] = useState(false);
   const [paidSuccess, setPaidSuccess] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const handleCopy = (text: string, fieldName: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedField(fieldName);
+      setTimeout(() => setCopiedField(null), 2500);
+    }
+  };
 
   const fetchInvoice = async () => {
     try {
@@ -129,6 +140,11 @@ export default function ClientPortalPage({
   }
 
   const isPaid = invoice.status === 'paid' || invoice.balanceDueCents === 0;
+  const isOnlinePaymentAllowed = invoice.paymentMethodOption !== 'bank_transfer';
+  const isBankTransferAllowed = invoice.paymentMethodOption !== 'online';
+  const wire =
+    invoice.organizationSnapshot?.wireInstructions || (invoice.organizationId as any)?.wireInstructions;
+  const hasBankDetails = Boolean(wire?.bankName || wire?.accountNumber || wire?.swiftCode);
   const orgLogoUrl = invoice.organizationSnapshot?.branding?.logoUrl || (invoice.organizationId as any)?.branding?.logoUrl;
 
   return (
@@ -178,13 +194,30 @@ export default function ClientPortalPage({
             </button>
 
             {!isPaid && (
-              <button
-                onClick={handlePayButtonClick}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
-              >
-                <CreditCard className="w-3.5 h-3.5" />
-                <span>Pay {formatCurrency(invoice.balanceDueCents, invoice.currency)}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                {isOnlinePaymentAllowed && (
+                  <button
+                    onClick={handlePayButtonClick}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>Pay {formatCurrency(invoice.balanceDueCents, invoice.currency)}</span>
+                  </button>
+                )}
+                {isBankTransferAllowed && hasBankDetails && (
+                  <button
+                    onClick={() => setShowBankModal(true)}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer ${
+                      isOnlinePaymentAllowed
+                        ? 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+                        : 'bg-slate-900 hover:bg-slate-800 text-white'
+                    }`}
+                  >
+                    <Building className={`w-3.5 h-3.5 ${isOnlinePaymentAllowed ? 'text-slate-600' : 'text-sky-400'}`} />
+                    <span>Bank Details</span>
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -198,17 +231,168 @@ export default function ClientPortalPage({
             </div>
           </div>
         ) : (
-          <div className="no-print bg-blue-50 border border-blue-200 text-blue-900 p-4 rounded-xl flex items-center justify-between gap-4">
+          <div className="no-print bg-blue-50 border border-blue-200 text-blue-900 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="text-xs">
               <span className="font-bold">Payment Due:</span> This invoice is due on{' '}
               <span className="font-semibold">{new Date(invoice.dueDate).toLocaleDateString()}</span>.
+              {!isOnlinePaymentAllowed ? (
+                <span className="ml-1 text-blue-800 font-medium">
+                  Settlement via <strong>Direct Bank Transfer</strong> to the issuer's company account.
+                </span>
+              ) : (
+                <span className="ml-1 text-slate-600">
+                  Balance due: <strong>{formatCurrency(invoice.balanceDueCents, invoice.currency)}</strong>.
+                </span>
+              )}
             </div>
-            <button
-              onClick={() => setShowCheckout(true)}
-              className="text-xs font-bold text-blue-700 hover:underline flex items-center gap-1"
-            >
-              <span>Pay Online</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {isOnlinePaymentAllowed ? (
+                <button
+                  onClick={() => setShowCheckout(true)}
+                  className="text-xs font-bold text-blue-700 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Pay Online</span>
+                </button>
+              ) : hasBankDetails ? (
+                <button
+                  onClick={() => setShowBankModal(true)}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                >
+                  <Building className="w-3.5 h-3.5" />
+                  <span>View Bank Details</span>
+                </button>
+              ) : null}
+            </div>
+          </div>
+        )}
+
+        {/* Dedicated Bank Settlement Card for Bank Transfer Only Documents */}
+        {!isOnlinePaymentAllowed && hasBankDetails && !isPaid && (
+          <div className="no-print bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Building className="w-5 h-5 text-blue-600" />
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">Direct Bank Transfer Settlement</h3>
+                  <p className="text-xs text-slate-500">
+                    Online card checkout is disabled for this invoice. Please wire balance due to the account below.
+                  </p>
+                </div>
+              </div>
+              <div className="text-left sm:text-right">
+                <span className="text-[11px] text-slate-400 block">Balance Due</span>
+                <span className="text-base font-extrabold text-slate-900">
+                  {formatCurrency(invoice.balanceDueCents, invoice.currency)}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {wire.bankName && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span className="text-[10px] text-slate-400 font-medium block">Bank Name</span>
+                  <span className="text-xs font-bold text-slate-800 block mt-0.5">{wire.bankName}</span>
+                </div>
+              )}
+
+              {wire.accountName && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span className="text-[10px] text-slate-400 font-medium block">Account Beneficiary</span>
+                  <span className="text-xs font-bold text-slate-800 block mt-0.5">{wire.accountName}</span>
+                </div>
+              )}
+
+              {wire.accountNumber && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium block">Account Number / IBAN</span>
+                    <span className="text-xs font-mono font-bold text-slate-900 block mt-0.5">{wire.accountNumber}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(wire.accountNumber, 'accountNumber')}
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                    title="Copy Account Number"
+                  >
+                    {copiedField === 'accountNumber' ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {wire.routingNumber && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium block">Routing / Sort Code</span>
+                    <span className="text-xs font-mono font-bold text-slate-900 block mt-0.5">{wire.routingNumber}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(wire.routingNumber, 'routingNumber')}
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                    title="Copy Routing Number"
+                  >
+                    {copiedField === 'routingNumber' ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {wire.swiftCode && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium block">SWIFT / BIC Code</span>
+                    <span className="text-xs font-mono font-bold text-slate-900 block mt-0.5">{wire.swiftCode}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(wire.swiftCode, 'swiftCode')}
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                    title="Copy SWIFT Code"
+                  >
+                    {copiedField === 'swiftCode' ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              )}
+
+              <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-100 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-blue-600 font-medium block">Narration / Reference</span>
+                  <span className="text-xs font-mono font-bold text-blue-950 block mt-0.5">
+                    {invoice.invoiceNumber}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(invoice.invoiceNumber, 'invoiceRef')}
+                  className="p-1.5 rounded-lg bg-white border border-blue-200 hover:bg-blue-100/60 text-blue-700 transition-colors cursor-pointer"
+                  title="Copy Invoice Reference"
+                >
+                  {copiedField === 'invoiceRef' ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {wire.instructions && (
+              <div className="text-xs text-slate-500 bg-slate-50/60 p-3 rounded-lg border border-slate-100">
+                <span className="font-semibold text-slate-700 block mb-0.5">Instructions:</span>
+                <p className="whitespace-pre-line leading-relaxed">{wire.instructions}</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -319,6 +503,140 @@ export default function ClientPortalPage({
                 </span>
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Embedded Bank Transfer Settlement Modal */}
+      {showBankModal && hasBankDetails && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Building className="w-4 h-4 text-blue-600" />
+                <h3 className="font-bold text-slate-900">Company Bank Settlement Details</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBankModal(false)}
+                className="text-slate-400 hover:text-slate-600 text-xs font-semibold cursor-pointer"
+              >
+                Close ✕
+              </button>
+            </div>
+
+            <div className="bg-blue-50/70 p-3.5 rounded-xl border border-blue-100 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider block">
+                  Amount to Transfer
+                </span>
+                <span className="text-2xl font-black text-blue-950 mt-0.5 block">
+                  {formatCurrency(invoice.balanceDueCents, invoice.currency)}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider block">
+                  Beneficiary
+                </span>
+                <span className="text-xs font-bold text-blue-900 mt-0.5 block">
+                  {wire.accountName || invoice.organizationSnapshot?.name}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              {wire.bankName && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium block">Bank Name</span>
+                    <span className="text-xs font-bold text-slate-800">{wire.bankName}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(wire.bankName, 'mBankName')}
+                    className="p-1 rounded bg-white border border-slate-200 text-slate-600 text-xs hover:bg-slate-100 cursor-pointer"
+                  >
+                    {copiedField === 'mBankName' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              )}
+
+              {wire.accountNumber && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium block">Account Number / IBAN</span>
+                    <span className="text-sm font-mono font-bold text-slate-900">{wire.accountNumber}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(wire.accountNumber, 'mAccountNumber')}
+                    className="p-1 rounded bg-white border border-slate-200 text-slate-600 text-xs hover:bg-slate-100 cursor-pointer"
+                  >
+                    {copiedField === 'mAccountNumber' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              )}
+
+              {wire.routingNumber && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium block">Routing / Sort Code</span>
+                    <span className="text-xs font-mono font-bold text-slate-900">{wire.routingNumber}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(wire.routingNumber, 'mRouting')}
+                    className="p-1 rounded bg-white border border-slate-200 text-slate-600 text-xs hover:bg-slate-100 cursor-pointer"
+                  >
+                    {copiedField === 'mRouting' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              )}
+
+              {wire.swiftCode && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium block">SWIFT / BIC</span>
+                    <span className="text-xs font-mono font-bold text-slate-900">{wire.swiftCode}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(wire.swiftCode, 'mSwift')}
+                    className="p-1 rounded bg-white border border-slate-200 text-slate-600 text-xs hover:bg-slate-100 cursor-pointer"
+                  >
+                    {copiedField === 'mSwift' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              )}
+
+              <div className="p-3 bg-blue-50/70 rounded-xl border border-blue-200/80 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-blue-600 font-medium block">Transfer Reference (Invoice #)</span>
+                  <span className="text-xs font-mono font-bold text-blue-950">{invoice.invoiceNumber}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(invoice.invoiceNumber, 'mInvRef')}
+                  className="p-1 rounded bg-white border border-blue-200 text-blue-700 text-xs hover:bg-blue-100/60 cursor-pointer"
+                >
+                  {copiedField === 'mInvRef' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            {wire.instructions && (
+              <p className="text-xs text-slate-500 whitespace-pre-line bg-slate-50 p-3 rounded-lg border border-slate-100">
+                {wire.instructions}
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setShowBankModal(false)}
+              className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs cursor-pointer"
+            >
+              Done / Got It
+            </button>
           </div>
         </div>
       )}
